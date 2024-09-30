@@ -14,7 +14,7 @@ func main() {
 	storage = memStorage.New()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/update/", update.New(storage))
+	mux.HandleFunc("/update/{typeMetric}/{nameMetric}/{valueMetric}", update.New(storage))
 
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		panic(err)

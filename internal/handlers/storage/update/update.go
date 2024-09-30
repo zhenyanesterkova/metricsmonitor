@@ -2,17 +2,12 @@ package update
 
 import (
 	"net/http"
-	"strings"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricErrors"
 )
 
-type Storage interface {
-	Update(name string, typeMetric string, val string) error
-	String() string
-}
-
-func New(s Storage) http.HandlerFunc {
+func New(s handlers.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Method != http.MethodPost {
@@ -20,15 +15,9 @@ func New(s Storage) http.HandlerFunc {
 			return
 		}
 
-		pathArr := strings.Split(r.URL.Path, "/")[1:]
-		if len(pathArr) != 4 {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		metricType := pathArr[1]
-		metricName := pathArr[2]
-		metricValue := pathArr[3]
+		metricType := r.PathValue("typeMetric")
+		metricName := r.PathValue("nameMetric")
+		metricValue := r.PathValue("valueMetric")
 
 		err := s.Update(metricName, metricType, metricValue)
 		if err != nil {
