@@ -3,7 +3,7 @@ package counter
 import (
 	"strconv"
 
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricErrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
 
 type MetricCounter struct {
@@ -17,7 +17,7 @@ func NewMetricCounter() *MetricCounter {
 func (m *MetricCounter) SetValue(newValue string) error {
 	val, err := strconv.ParseInt(newValue, 0, 64)
 	if err != nil {
-		return metricErrors.ErrParseValue
+		return metricerrors.ErrParseValue
 	}
 	m.valueMetric += val
 	return nil

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricErrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
 
 func New(s handlers.Storage) http.HandlerFunc {
@@ -22,10 +22,10 @@ func New(s handlers.Storage) http.HandlerFunc {
 		err := s.Update(metricName, metricType, metricValue)
 		if err != nil {
 			switch err {
-			case metricErrors.ErrInvalidName:
+			case metricerrors.ErrInvalidName:
 				w.WriteHeader(http.StatusNotFound)
 				return
-			case metricErrors.ErrInvalidType, metricErrors.ErrParseValue, metricErrors.ErrUnknownType:
+			case metricerrors.ErrInvalidType, metricerrors.ErrParseValue, metricerrors.ErrUnknownType:
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			default:

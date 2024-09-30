@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers/storage/update"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memStorage"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
-var storage *memStorage.Storage
+var storage *memstorage.Storage
 
 func main() {
 
-	storage = memStorage.New()
+	storage = memstorage.New()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/update/{typeMetric}/{nameMetric}/{valueMetric}", update.New(storage))

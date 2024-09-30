@@ -1,11 +1,11 @@
-package memStorage
+package memstorage
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/metric"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricErrors"
+	metricerrors "github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
 
 type Storage struct {
@@ -20,12 +20,12 @@ func New() *Storage {
 
 func (s *Storage) Update(name, typeMetric string, val string) error {
 	if name == "" {
-		return metricErrors.ErrInvalidName
+		return metricerrors.ErrInvalidName
 	}
 
 	if curMetric, ok := s.Metrics[name]; ok {
 		if curMetric.GetType() != typeMetric {
-			return metricErrors.ErrInvalidType
+			return metricerrors.ErrInvalidType
 		}
 	} else {
 		newMetric, err := metric.New(typeMetric)

@@ -3,7 +3,7 @@ package gauge
 import (
 	"strconv"
 
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricErrors"
+	metricerrors "github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
 
 type MetricGauge struct {
@@ -17,7 +17,7 @@ func NewMetricGauge() *MetricGauge {
 func (m *MetricGauge) SetValue(newValue string) error {
 	val, err := strconv.ParseFloat(newValue, 64)
 	if err != nil {
-		return metricErrors.ErrParseValue
+		return metricerrors.ErrParseValue
 	}
 	m.valueMetric = val
 	return nil
