@@ -3,7 +3,7 @@ package gauge
 import (
 	"strconv"
 
-	metricerrors "github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
 
 type MetricGauge struct {

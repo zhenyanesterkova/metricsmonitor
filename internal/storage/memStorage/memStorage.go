@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/metric"
-	metricerrors "github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
 
 type Storage struct {
