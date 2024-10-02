@@ -111,15 +111,15 @@ var Metrics = map[string]*metric{
 	},
 }
 
-func getMetricsStatistic(metrics map[string]*metric, statistic *runtime.MemStats) error {
+func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats) error {
 
-	runtime.ReadMemStats(statistic)
-	statisticFields := reflect.ValueOf(statistic).Elem()
+	runtime.ReadMemStats(statStruct)
+	statStructFields := reflect.ValueOf(statStruct).Elem()
 
-	for i := 0; i < statisticFields.NumField(); i++ {
+	for i := 0; i < statStructFields.NumField(); i++ {
 
-		field := statisticFields.Field(i)
-		fieldName := statisticFields.Type().Field(i).Name
+		field := statStructFields.Field(i)
+		fieldName := statStructFields.Type().Field(i).Name
 		fieldType := field.Kind()
 		if metric, ok := metrics[fieldName]; ok {
 			switch fieldType {
@@ -196,7 +196,7 @@ func updateStatistic(n int) error {
 	stats := &runtime.MemStats{}
 	for range n {
 
-		err := getMetricsStatistic(Metrics, stats)
+		err := updateMetrics(Metrics, stats)
 		if err != nil {
 			return err
 		}
