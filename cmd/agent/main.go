@@ -1,8 +1,6 @@
 package main
 
 import (
-	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -134,8 +132,6 @@ func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats, mut
 			case reflect.Uint32:
 				metric.value = strconv.FormatUint(field.Uint(), 10)
 			}
-
-			log.Printf("    %s : %s\n", fieldName, metrics[fieldName].value)
 		}
 
 	}
@@ -145,10 +141,8 @@ func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats, mut
 		return err
 	}
 	metrics["PollCount"].value = strconv.FormatInt(pollCountValue+1, 10)
-	log.Printf("    PollCount : %v\n", metrics["PollCount"].value)
 
 	metrics["RandomValue"].value = strconv.FormatFloat(rand.Float64(), 'f', -1, 64)
-	log.Printf("    RandomValue : %v\n", metrics["RandomValue"].value)
 	mutex.Unlock()
 	return nil
 }
@@ -168,30 +162,17 @@ func sendQueryUpdateMetric(client *http.Client, mName string, m metric, endpoint
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
-		log.Printf("can not create request: %v", err)
 		return err
 	}
 
 	req.Header.Set("Content-Type", "text/plain")
 
-	log.Printf("send request to %s\n", url)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("can not do request: %v", err)
 		return err
 	}
-	log.Printf("got response from %s\n", url)
 
 	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		log.Printf("can not do request: %v", err)
-		return err
-	}
-	log.Printf("response body:\n")
-	log.Println(string(body))
 
 	return nil
 }
