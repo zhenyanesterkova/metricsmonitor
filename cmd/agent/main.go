@@ -9,11 +9,15 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 const pollInterval time.Duration = 2 * time.Second
 const reportInterval time.Duration = 10 * time.Second
+
+var mutex sync.Mutex
+var wg sync.WaitGroup
 
 type metric struct {
 	metricType string
@@ -111,8 +115,8 @@ var Metrics = map[string]*metric{
 	},
 }
 
-func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats) error {
-
+func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats, mutex *sync.Mutex) error {
+	mutex.Lock()
 	runtime.ReadMemStats(statStruct)
 	statStructFields := reflect.ValueOf(statStruct).Elem()
 
@@ -145,7 +149,7 @@ func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats) err
 
 	metrics["RandomValue"].value = strconv.FormatFloat(rand.Float64(), 'f', -1, 64)
 	log.Printf("    RandomValue : %v\n", metrics["RandomValue"].value)
-
+	mutex.Unlock()
 	return nil
 }
 
@@ -192,33 +196,44 @@ func sendQueryUpdateMetric(client *http.Client, mName string, m metric, endpoint
 	return nil
 }
 
-func updateStatistic(n int) error {
+func updateStatistic(interval time.Duration, mutex *sync.Mutex) {
+	defer wg.Done()
 	stats := &runtime.MemStats{}
-	for range n {
 
-		err := updateMetrics(Metrics, stats)
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+
+		err := updateMetrics(Metrics, stats, mutex)
 		if err != nil {
-			return err
+			panic(err)
 		}
-
-		time.Sleep(pollInterval)
 	}
-	return nil
+}
+
+func sendReport(client *http.Client, endpoint string, interval time.Duration, mutex *sync.Mutex) {
+	defer wg.Done()
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+		for name, metric := range Metrics {
+			mutex.Lock()
+			err := sendQueryUpdateMetric(client, name, *metric, endpoint)
+			if err != nil {
+				panic(err)
+			}
+			mutex.Unlock()
+		}
+	}
 }
 
 func main() {
 	endpoint := "http://localhost:8080/update/"
 	client := &http.Client{}
-	for {
-		countUpdateStatistic := int(reportInterval / pollInterval)
-		err := updateStatistic(countUpdateStatistic)
-		if err != nil {
-			panic(err)
-		}
 
-		for name, metric := range Metrics {
-			sendQueryUpdateMetric(client, name, *metric, endpoint)
-		}
+	wg.Add(2)
+	go updateStatistic(pollInterval, &mutex)
 
-	}
+	go sendReport(client, endpoint, reportInterval, &mutex)
+
+	wg.Wait()
+
 }
