@@ -22,6 +22,12 @@ func (s *Storage) Update(name, typeMetric string, val string) error {
 	if name == "" {
 		return metricerrors.ErrInvalidName
 	}
+	if typeMetric == "" {
+		return metricerrors.ErrInvalidType
+	}
+	if val == "" {
+		return metricerrors.ErrParseValue
+	}
 
 	if curMetric, ok := s.Metrics[name]; ok {
 		if curMetric.GetType() != typeMetric {
