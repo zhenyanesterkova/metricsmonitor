@@ -1,119 +1,222 @@
 package main
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
+	"text/template"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers/storage/update"
+	"github.com/stretchr/testify/require"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
-func TestUpdateHandler(t *testing.T) {
-	type path struct {
-		typeMetric  string
-		nameMetric  string
-		valueMetric string
+func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
+	req, err := http.NewRequest(method, ts.URL+path, nil)
+	require.NoError(t, err)
+
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	return resp, string(respBody)
+
+}
+
+func CreateTestMemStorage() (storage *memstorage.Storage) {
+	storage = memstorage.New()
+	storage.UpdateMetric("testCounter", "counter", "1")
+	storage.UpdateMetric("testGauge", "gauge", "2.5")
+	return
+}
+
+func getExpectedHtml(templateName, nameData string, data interface{}) (string, error) {
+	buf := bytes.NewBufferString("")
+	index := filepath.Join("../../", "assets", "templates", templateName)
+	tmplIndex, err := template.ParseFiles(index)
+	if err != nil {
+		return "", err
 	}
-	type want struct {
-		statuseCode int
-		contentType string
+	err = tmplIndex.ExecuteTemplate(buf, nameData, data)
+	if err != nil {
+		return "", err
 	}
+	return buf.String(), nil
+}
+
+func TestRouter(t *testing.T) {
+
+	respHtml, _ := getExpectedHtml("index.html", "metrics", [][2]string{
+		{"testCounter", "1"},
+		{"testGauge", "2.5"},
+	})
+
+	memStorage := CreateTestMemStorage()
+	ts := httptest.NewServer(NewRouter(memStorage))
+	defer ts.Close()
+
 	tests := []struct {
-		name    string
-		method  string
-		request string
-		path    path
-		want    want
+		name                          string
+		method                        string
+		url                           string
+		wantRespBody                  string
+		metricName                    string
+		wantStorageCounterMetricValue string
+		wantStorageGaugeMetricValue   string
+		status                        int
 	}{
 		{
-			name:    "test #1: method GET",
-			method:  http.MethodGet,
-			request: "/update/counter/test/1",
-			path: path{
-				typeMetric:  "counter",
-				nameMetric:  "test",
-				valueMetric: "1",
-			},
-			want: want{
-				statuseCode: http.StatusMethodNotAllowed,
-				contentType: "",
-			},
+			name:         "test #1: GET / ",
+			method:       http.MethodGet,
+			url:          "/",
+			wantRespBody: respHtml,
+			status:       http.StatusOK,
 		},
 		{
-			name:    "test #2: method POST without name",
-			method:  http.MethodPost,
-			request: "/update/counter//1",
-			path: path{
-				typeMetric:  "counter",
-				nameMetric:  "",
-				valueMetric: "1",
-			},
-			want: want{
-				statuseCode: http.StatusNotFound,
-				contentType: "",
-			},
+			name:         "test #2: method GET /value/counter/test (unknown metric name)",
+			method:       http.MethodGet,
+			url:          "/value/counter/test",
+			wantRespBody: "",
+			status:       http.StatusNotFound,
 		},
 		{
-			name:    "test #3: method POST incorrect type",
-			method:  http.MethodPost,
-			request: "/update/ttt/test/1",
-			path: path{
-				typeMetric:  "ttt",
-				nameMetric:  "test",
-				valueMetric: "1",
-			},
-			want: want{
-				statuseCode: http.StatusBadRequest,
-				contentType: "",
-			},
+			name:         "test #3: method GET /value/counter/testCounter (correct metric name, type)",
+			method:       http.MethodGet,
+			url:          "/value/counter/testCounter",
+			wantRespBody: "1",
+			status:       http.StatusOK,
 		},
 		{
-			name:    "test #4: method POST incorrect value",
-			method:  http.MethodPost,
-			request: "/update/counter/test/",
-			path: path{
-				typeMetric:  "counter",
-				nameMetric:  "test",
-				valueMetric: "",
-			},
-			want: want{
-				statuseCode: http.StatusBadRequest,
-				contentType: "",
-			},
+			name:         "test #4: method GET /value/gauge/testCounter (correct metric name, incorrect metric type)",
+			method:       http.MethodGet,
+			url:          "/value/gauge/testCounter",
+			wantRespBody: "",
+			status:       http.StatusNotFound,
 		},
 		{
-			name:    "test #4: method POST correct",
-			method:  http.MethodPost,
-			request: "/update/counter/test/1",
-			path: path{
-				typeMetric:  "counter",
-				nameMetric:  "test",
-				valueMetric: "1",
-			},
-			want: want{
-				statuseCode: http.StatusOK,
-				contentType: "text/plain; charset=utf-8",
-			},
+			name:                          "test #5: method POST /update/counter/testCounter/1 (correct metric name, value, type; existing metric; counter)",
+			method:                        http.MethodPost,
+			url:                           "/update/counter/testCounter/1",
+			wantRespBody:                  "",
+			metricName:                    "testCounter",
+			wantStorageCounterMetricValue: "2",
+			status:                        http.StatusOK,
+		},
+		{
+			name:                          "test #6: method POST /update/counter/testCounter/ttt (correct metric name, type; incorrect value; existing metric; counter)",
+			method:                        http.MethodPost,
+			url:                           "/update/counter/testCounter/ttt",
+			wantRespBody:                  "",
+			metricName:                    "testCounter",
+			wantStorageCounterMetricValue: "2",
+			status:                        http.StatusBadRequest,
+		},
+		{
+			name:                          "test #7: method POST /update/gauge/testCounter/1 (correct metric name, value; incorrect type; existing metric; counter)",
+			method:                        http.MethodPost,
+			url:                           "/update/gauge/testCounter/1",
+			wantRespBody:                  "",
+			metricName:                    "testCounter",
+			wantStorageCounterMetricValue: "2",
+			status:                        http.StatusBadRequest,
+		},
+		{
+			name:                          "test #8: method POST /update/counter/testCounterNew/1 (correct metric name, value, type; not existing metric; counter)",
+			method:                        http.MethodPost,
+			url:                           "/update/counter/testCounterNew/1",
+			wantRespBody:                  "",
+			metricName:                    "testCounterNew",
+			wantStorageCounterMetricValue: "1",
+			status:                        http.StatusOK,
+		},
+		{
+			name:                        "test #9: method POST /update/gauge/testGauge/1.5 (correct metric name, value, type; existing metric; gauge)",
+			method:                      http.MethodPost,
+			url:                         "/update/gauge/testGauge/1.5",
+			wantRespBody:                "",
+			metricName:                  "testGauge",
+			wantStorageGaugeMetricValue: "1.5",
+			status:                      http.StatusOK,
+		},
+		{
+			name:                        "test #10: method POST /update/gauge/testGauge/ttt (correct metric name, type; incorrect value; existing metric; gauge)",
+			method:                      http.MethodPost,
+			url:                         "/update/gauge/testGauge/ttt",
+			wantRespBody:                "",
+			metricName:                  "testGauge",
+			wantStorageGaugeMetricValue: "1.5",
+			status:                      http.StatusBadRequest,
+		},
+		{
+			name:                        "test #11: method POST /update/counter/testGauge/1 (correct metric name, value; incorrect type; existing metric; gauge)",
+			method:                      http.MethodPost,
+			url:                         "/update/counter/testGauge/1",
+			wantRespBody:                "",
+			metricName:                  "testGauge",
+			wantStorageGaugeMetricValue: "1.5",
+			status:                      http.StatusBadRequest,
+		},
+		{
+			name:                        "test #12: method POST /update/gauge/testGaugeNew/3.6 (correct metric name, value, type; not existing metric; gauge)",
+			method:                      http.MethodPost,
+			url:                         "/update/gauge/testGaugeNew/3.6",
+			wantRespBody:                "",
+			metricName:                  "testGaugeNew",
+			wantStorageGaugeMetricValue: "3.6",
+			status:                      http.StatusOK,
+		},
+		{
+			name:         "test #13: method GET /value/gauge/test (unknown metric name)",
+			method:       http.MethodGet,
+			url:          "/value/gauge/test",
+			wantRespBody: "",
+			status:       http.StatusNotFound,
+		},
+		{
+			name:         "test #14: method GET /value/gauge/testGauge (correct metric name, type)",
+			method:       http.MethodGet,
+			url:          "/value/gauge/testGauge",
+			wantRespBody: "1.5",
+			status:       http.StatusOK,
+		},
+		{
+			name:         "test #15: method GET /update/gauge/testGaugeNew/3 (correct metric name, type, value; incorrect method)",
+			method:       http.MethodGet,
+			url:          "/update/gauge/testGaugeNew/3.6",
+			wantRespBody: "",
+			status:       http.StatusMethodNotAllowed,
+		},
+		{
+			name:         "test #16: method POST /value/gauge/testGaugeNew (correct metric name, type, value; incorrect method)",
+			method:       http.MethodPost,
+			url:          "/value/gauge/testGaugeNew",
+			wantRespBody: "",
+			status:       http.StatusMethodNotAllowed,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			newStorage := memstorage.New()
-			req := httptest.NewRequest(test.method, test.request, nil)
-			req.SetPathValue("typeMetric", test.path.typeMetric)
-			req.SetPathValue("nameMetric", test.path.nameMetric)
-			req.SetPathValue("valueMetric", test.path.valueMetric)
-			w := httptest.NewRecorder()
-			h := http.HandlerFunc(update.New(newStorage))
-			h(w, req)
+			resp, respBody := testRequest(t, ts, test.method, test.url)
 
-			result := w.Result()
-			defer result.Body.Close()
+			assert.Equal(t, test.status, resp.StatusCode)
+			assert.Equal(t, test.wantRespBody, respBody)
 
-			assert.Equal(t, test.want.statuseCode, result.StatusCode)
-			assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
+			if test.wantStorageCounterMetricValue != "" {
+				actualValue, err := memStorage.GetMetricValue(test.metricName, "counter")
+				require.NoError(t, err)
+				assert.Equal(t, test.wantStorageCounterMetricValue, actualValue)
+			}
+			if test.wantStorageGaugeMetricValue != "" {
+				actualValue, err := memStorage.GetMetricValue(test.metricName, "gauge")
+				require.NoError(t, err)
+				assert.Equal(t, test.wantStorageGaugeMetricValue, actualValue)
+			}
 		})
 	}
 }

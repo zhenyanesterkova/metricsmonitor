@@ -9,16 +9,38 @@ import (
 )
 
 type Storage struct {
-	Metrics map[string]metric.Metric
+	metrics map[string]metric.Metric
 }
 
 func New() *Storage {
 	return &Storage{
-		Metrics: make(map[string]metric.Metric),
+		metrics: make(map[string]metric.Metric),
 	}
 }
 
-func (s *Storage) Update(name, typeMetric string, val string) error {
+func (s *Storage) GetAllMetrics() ([][2]string, error) {
+	res := [][2]string{}
+	temp := [2]string{}
+	for name, metric := range s.metrics {
+		temp[0], temp[1] = name, metric.String()
+		res = append(res, temp)
+	}
+
+	return res, nil
+}
+
+func (s *Storage) GetMetricValue(name, typeMetric string) (string, error) {
+	if metric, ok := s.metrics[name]; ok {
+		if metric.GetType() == typeMetric {
+			return metric.String(), nil
+		} else {
+			return "", metricerrors.ErrInvalidType
+		}
+	}
+	return "", metricerrors.ErrUnknownMetric
+}
+
+func (s *Storage) UpdateMetric(name, typeMetric string, val string) error {
 	if name == "" {
 		return metricerrors.ErrInvalidName
 	}
@@ -29,26 +51,32 @@ func (s *Storage) Update(name, typeMetric string, val string) error {
 		return metricerrors.ErrParseValue
 	}
 
-	if curMetric, ok := s.Metrics[name]; ok {
+	if curMetric, ok := s.metrics[name]; ok {
 		if curMetric.GetType() != typeMetric {
 			return metricerrors.ErrInvalidType
+		}
+		err := s.metrics[name].SetValue(val)
+		if err != nil {
+			return err
 		}
 	} else {
 		newMetric, err := metric.New(typeMetric)
 		if err != nil {
 			return err
 		}
-		s.Metrics[name] = newMetric
+		err = newMetric.SetValue(val)
+		if err != nil {
+			return err
+		}
+		s.metrics[name] = newMetric
 	}
 
-	err := s.Metrics[name].SetValue(val)
-
-	return err
+	return nil
 }
 
 func (s Storage) String() string {
 	var sb strings.Builder
-	for k, v := range s.Metrics {
+	for k, v := range s.metrics {
 		sb.WriteString(fmt.Sprintf("%s : %s\n", k, v.String()))
 	}
 

@@ -3,6 +3,7 @@ package update
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
 )
@@ -10,30 +11,24 @@ import (
 func New(s handlers.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
+		metricType := chi.URLParam(r, "typeMetric")
+		metricName := chi.URLParam(r, "nameMetric")
+		metricValue := chi.URLParam(r, "valueMetric")
 
-		metricType := r.PathValue("typeMetric")
-		metricName := r.PathValue("nameMetric")
-		metricValue := r.PathValue("valueMetric")
-
-		err := s.Update(metricName, metricType, metricValue)
+		err := s.UpdateMetric(metricName, metricType, metricValue)
 		if err != nil {
 			switch err {
 			case metricerrors.ErrInvalidName:
 				w.WriteHeader(http.StatusNotFound)
 				return
-			case metricerrors.ErrInvalidType, metricerrors.ErrParseValue, metricerrors.ErrUnknownType:
+			case metricerrors.ErrParseValue, metricerrors.ErrUnknownType, metricerrors.ErrInvalidType:
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			default:
+				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
 				return
 			}
 		}
-
-		w.Write([]byte(s.String()))
 	}
 }

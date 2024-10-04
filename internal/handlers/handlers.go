@@ -1,6 +1,7 @@
 package handlers
 
 type Storage interface {
-	Update(name string, typeMetric string, val string) error
-	String() string
+	UpdateMetric(name string, typeMetric string, val string) error
+	GetAllMetrics() ([][2]string, error)
+	GetMetricValue(name, metricType string) (string, error)
 }
