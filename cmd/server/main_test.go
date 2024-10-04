@@ -36,7 +36,7 @@ func CreateTestMemStorage() (storage *memstorage.Storage) {
 	return
 }
 
-func getExpectedHtml(templateName, nameData string, data interface{}) (string, error) {
+func getExpectedHTML(templateName, nameData string, data interface{}) (string, error) {
 	buf := bytes.NewBufferString("")
 	index := filepath.Join("../../", "assets", "templates", templateName)
 	tmplIndex, err := template.ParseFiles(index)
@@ -52,7 +52,7 @@ func getExpectedHtml(templateName, nameData string, data interface{}) (string, e
 
 func TestRouter(t *testing.T) {
 
-	respHtml, _ := getExpectedHtml("index.html", "metrics", [][2]string{
+	respHTML, _ := getExpectedHTML("index.html", "metrics", [][2]string{
 		{"testCounter", "1"},
 		{"testGauge", "2.5"},
 	})
@@ -75,7 +75,7 @@ func TestRouter(t *testing.T) {
 			name:         "test #1: GET / ",
 			method:       http.MethodGet,
 			url:          "/",
-			wantRespBody: respHtml,
+			wantRespBody: respHTML,
 			status:       http.StatusOK,
 		},
 		{
@@ -203,6 +203,7 @@ func TestRouter(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp, respBody := testRequest(t, ts, test.method, test.url)
+			defer resp.Body.Close()
 
 			assert.Equal(t, test.status, resp.StatusCode)
 			assert.Equal(t, test.wantRespBody, respBody)
