@@ -11,9 +11,6 @@ import (
 	"time"
 )
 
-const pollInterval time.Duration = 2 * time.Second
-const reportInterval time.Duration = 10 * time.Second
-
 var mutex sync.Mutex
 var wg sync.WaitGroup
 
@@ -150,7 +147,9 @@ func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats, mut
 func sendQueryUpdateMetric(client *http.Client, mName string, m metric, endpoint string) error {
 
 	builder := strings.Builder{}
+	builder.WriteString("http://")
 	builder.WriteString(endpoint)
+	builder.WriteString("/update/")
 	builder.WriteString(m.metricType)
 	builder.WriteString("/")
 	builder.WriteString(mName)
@@ -177,11 +176,11 @@ func sendQueryUpdateMetric(client *http.Client, mName string, m metric, endpoint
 	return nil
 }
 
-func updateStatistic(interval time.Duration, mutex *sync.Mutex) {
+func updateStatistic(interval int, mutex *sync.Mutex) {
 	defer wg.Done()
 	stats := &runtime.MemStats{}
 
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	for range ticker.C {
 
 		err := updateMetrics(Metrics, stats, mutex)
@@ -191,9 +190,9 @@ func updateStatistic(interval time.Duration, mutex *sync.Mutex) {
 	}
 }
 
-func sendReport(client *http.Client, endpoint string, interval time.Duration, mutex *sync.Mutex) {
+func sendReport(client *http.Client, endpoint string, interval int, mutex *sync.Mutex) {
 	defer wg.Done()
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	for range ticker.C {
 		for name, metric := range Metrics {
 			mutex.Lock()
@@ -207,7 +206,8 @@ func sendReport(client *http.Client, endpoint string, interval time.Duration, mu
 }
 
 func main() {
-	endpoint := "http://localhost:8080/update/"
+	parseFlags()
+
 	client := &http.Client{}
 
 	wg.Add(2)

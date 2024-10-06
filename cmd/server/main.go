@@ -26,10 +26,12 @@ func NewRouter(storage handlers.Storage) chi.Router {
 }
 
 func main() {
+	parseFlags()
 
 	storage = memstorage.New()
 
-	if err := http.ListenAndServe(":8080", NewRouter(storage)); err != nil {
+	if err := http.ListenAndServe(endpoint, NewRouter(storage)); err != nil {
 		panic(err)
 	}
+
 }
