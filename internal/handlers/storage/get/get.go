@@ -18,7 +18,7 @@ func NewGetAll(s handlers.Storage) http.HandlerFunc {
 			http.Error(w, "error get metrics: "+err.Error(), http.StatusInternalServerError)
 		}
 
-		index := filepath.Join("../../", "assets", "templates", "index.html")
+		index := filepath.Join("../../", "web", "template", "allMetricsView.html")
 		tmplIndex, err := template.ParseFiles(index)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
