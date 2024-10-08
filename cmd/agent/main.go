@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"net/http"
 	"reflect"
 	"runtime"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -145,19 +145,7 @@ func updateMetrics(metrics map[string]*metric, statStruct *runtime.MemStats, mut
 }
 
 func sendQueryUpdateMetric(client *http.Client, mName string, m metric, endpoint string) error {
-
-	builder := strings.Builder{}
-	builder.WriteString("http://")
-	builder.WriteString(endpoint)
-	builder.WriteString("/update/")
-	builder.WriteString(m.metricType)
-	builder.WriteString("/")
-	builder.WriteString(mName)
-	builder.WriteString("/")
-	builder.WriteString(m.value)
-	url := strings.TrimSpace(builder.String())
-
-	defer builder.Reset()
+	url := fmt.Sprintf("http://%s/update/%s/%s/%s", endpoint, m.metricType, mName, m.value)
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
