@@ -14,12 +14,10 @@ func NewRouter(storage handlers.Repositorie) chi.Router {
 
 	router.Route("/", func(r chi.Router) {
 		r.Get("/", handlers.New("getAllMetrics", storage))
-		r.Route("/value", func(r chi.Router) {
-			r.Get("/{typeMetric}/{nameMetric}", handlers.New("getMetricValue", storage))
-		})
-		r.Route("/update", func(r chi.Router) {
-			r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", handlers.New("updateMetricValue", storage))
-		})
+
+		r.Get("/value/{typeMetric}/{nameMetric}", handlers.New("getMetricValue", storage))
+
+		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", handlers.New("updateMetricValue", storage))
 
 	})
 
