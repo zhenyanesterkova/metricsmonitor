@@ -38,7 +38,7 @@ func CreateTestMemStorage() (storage *memstorage.Storage) {
 
 func getExpectedHTML(templateName, nameData string, data interface{}) (string, error) {
 	buf := bytes.NewBufferString("")
-	index := filepath.Join("../../", "assets", "templates", templateName)
+	index := filepath.Join("../../", "web", "template", templateName)
 	tmplIndex, err := template.ParseFiles(index)
 	if err != nil {
 		return "", err
@@ -52,7 +52,7 @@ func getExpectedHTML(templateName, nameData string, data interface{}) (string, e
 
 func TestRouter(t *testing.T) {
 
-	respHTML, _ := getExpectedHTML("index.html", "metrics", [][2]string{
+	respHTML, _ := getExpectedHTML("allMetricsView.html", "metrics", [][2]string{
 		{"testCounter", "1"},
 		{"testGauge", "2.5"},
 	})
