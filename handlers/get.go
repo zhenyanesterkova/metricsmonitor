@@ -17,7 +17,7 @@ func getAllMetrics(s Repositorie) http.HandlerFunc {
 			http.Error(w, "error get metrics: "+err.Error(), http.StatusInternalServerError)
 		}
 
-		index := filepath.Join("../", "web", "template", "allMetricsView.html")
+		index := filepath.Join("../../", "web", "template", "allMetricsView.html")
 		tmplIndex, err := template.ParseFiles(index)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
