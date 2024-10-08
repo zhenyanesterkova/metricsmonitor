@@ -3,7 +3,7 @@ package counter
 import (
 	"strconv"
 
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
 
 type MetricCounter struct {

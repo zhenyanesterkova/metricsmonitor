@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
+	"github.com/zhenyanesterkova/metricsmonitor/storage/memstorage"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
@@ -29,7 +29,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 
 }
 
-func CreateTestMemStorage() (storage *memstorage.Storage) {
+func CreateTestMemStorage() (storage *memstorage.MemStorage) {
 	storage = memstorage.New()
 	storage.UpdateMetric("testCounter", "counter", "1")
 	storage.UpdateMetric("testGauge", "gauge", "2.5")

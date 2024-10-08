@@ -1,12 +1,10 @@
 package metric
 
 import (
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/counter"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/gauge"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/counter"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/gauge"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
-
-var MetricTypes = []string{"gauge", "counter"}
 
 type Metric interface {
 	SetValue(string) error

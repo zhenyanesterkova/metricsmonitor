@@ -1,24 +1,21 @@
 package memstorage
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/metric/metricerrors"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
 
-type Storage struct {
+type MemStorage struct {
 	metrics map[string]metric.Metric
 }
 
-func New() *Storage {
-	return &Storage{
+func New() *MemStorage {
+	return &MemStorage{
 		metrics: make(map[string]metric.Metric),
 	}
 }
 
-func (s *Storage) GetAllMetrics() ([][2]string, error) {
+func (s *MemStorage) GetAllMetrics() ([][2]string, error) {
 	res := [][2]string{}
 	temp := [2]string{}
 	for name, metric := range s.metrics {
@@ -29,7 +26,7 @@ func (s *Storage) GetAllMetrics() ([][2]string, error) {
 	return res, nil
 }
 
-func (s *Storage) GetMetricValue(name, typeMetric string) (string, error) {
+func (s *MemStorage) GetMetricValue(name, typeMetric string) (string, error) {
 	if metric, ok := s.metrics[name]; ok {
 		if metric.GetType() == typeMetric {
 			return metric.String(), nil
@@ -40,7 +37,7 @@ func (s *Storage) GetMetricValue(name, typeMetric string) (string, error) {
 	return "", metricerrors.ErrUnknownMetric
 }
 
-func (s *Storage) UpdateMetric(name, typeMetric string, val string) error {
+func (s *MemStorage) UpdateMetric(name, typeMetric string, val string) error {
 	if name == "" {
 		return metricerrors.ErrInvalidName
 	}
@@ -72,13 +69,4 @@ func (s *Storage) UpdateMetric(name, typeMetric string, val string) error {
 	}
 
 	return nil
-}
-
-func (s Storage) String() string {
-	var sb strings.Builder
-	for k, v := range s.metrics {
-		sb.WriteString(fmt.Sprintf("%s : %s\n", k, v.String()))
-	}
-
-	return sb.String()
 }
