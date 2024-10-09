@@ -22,7 +22,7 @@ func (d *ConfigDirector) BuildConfig() (Config, error) {
 		return d.Builder.GetConfig(), err
 	}
 
-	d.Builder.SetReportInterval()
+	err = d.Builder.SetReportInterval()
 	if err != nil {
 		return d.Builder.GetConfig(), err
 	}
