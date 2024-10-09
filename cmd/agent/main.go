@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
 )
 
 var mutex sync.Mutex
@@ -164,44 +167,60 @@ func sendQueryUpdateMetric(client *http.Client, mName string, m metric, endpoint
 	return nil
 }
 
-func updateStatistic(interval int, mutex *sync.Mutex) {
+func updateStatistic(interval time.Duration, mutex *sync.Mutex) {
 	defer wg.Done()
 	stats := &runtime.MemStats{}
 
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	ticker := time.NewTicker(interval)
 	for range ticker.C {
 
 		err := updateMetrics(Metrics, stats, mutex)
 		if err != nil {
-			panic(err)
+			log.Printf("an error occurred while updating the metrics %v", err)
 		}
 	}
 }
 
-func sendReport(client *http.Client, endpoint string, interval int, mutex *sync.Mutex) {
+func sendReport(client *http.Client, endpoint string, interval time.Duration, mutex *sync.Mutex) {
+
 	defer wg.Done()
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	ticker := time.NewTicker(interval)
 	for range ticker.C {
+
 		for name, metric := range Metrics {
 			mutex.Lock()
 			err := sendQueryUpdateMetric(client, name, *metric, endpoint)
 			if err != nil {
-				panic(err)
+				log.Printf("an error occurred while sending the report to the server %v", err)
 			}
 			mutex.Unlock()
 		}
 	}
 }
 
+func getConfig() (config.Config, error) {
+	cfgBuilder := config.GetConfigBuilder()
+	cfgDirector := config.NewConfigDirector(cfgBuilder)
+	resConfig, err := cfgDirector.BuildConfig()
+	if err != nil {
+		return resConfig, err
+	}
+
+	return resConfig, nil
+}
+
 func main() {
-	parseFlags()
+	cfg, err := getConfig()
+	if err != nil {
+		log.Fatalf("an error occurred while reading the config %v", err)
+	}
 
 	client := &http.Client{}
 
 	wg.Add(2)
-	go updateStatistic(pollInterval, &mutex)
+	go updateStatistic(cfg.PollInterval, &mutex)
 
-	go sendReport(client, endpoint, reportInterval, &mutex)
+	go sendReport(client, cfg.Address, cfg.ReportInterval, &mutex)
 
 	wg.Wait()
 
