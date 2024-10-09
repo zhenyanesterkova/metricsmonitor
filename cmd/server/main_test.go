@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zhenyanesterkova/metricsmonitor/storage/memstorage"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {

@@ -5,9 +5,18 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/zhenyanesterkova/metricsmonitor/handlers"
-	"github.com/zhenyanesterkova/metricsmonitor/storage/memstorage"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
+
+func getConfig() config.Config {
+	cfgBuilder := config.GetConfigBuilder()
+	cfgDirector := config.NewConfigDirector(cfgBuilder)
+	resConfig := cfgDirector.BuildConfig()
+
+	return resConfig
+}
 
 func NewRouter(storage handlers.Repositorie) chi.Router {
 	router := chi.NewRouter()
@@ -26,11 +35,11 @@ func NewRouter(storage handlers.Repositorie) chi.Router {
 
 func main() {
 
-	parseFlags()
+	cfg := getConfig()
 
 	storage := memstorage.New()
 
-	if err := http.ListenAndServe(endpoint, NewRouter(storage)); err != nil {
+	if err := http.ListenAndServe(cfg.SConfig.Address, NewRouter(storage)); err != nil {
 		panic(err)
 	}
 
