@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
 	"path/filepath"
 	"text/template"
@@ -41,7 +40,6 @@ func getMetricValue(s Repositorie) http.HandlerFunc {
 				return
 			}
 		}
-
-		io.WriteString(w, res)
+		_, _ = w.Write([]byte(res))
 	}
 }
