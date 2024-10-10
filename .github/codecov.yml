@@ -1,5 +1,7 @@
 codecov:
   bot: "codecov"
+  notify:
+    wait_for_ci: false
 coverage:
   status:
     project: #add everything under here, more options at https://docs.codecov.com/docs/commit-status
@@ -9,7 +11,7 @@ coverage:
         threshold: 0%
         base: auto
 comment:                  # this is a top-level key
-  layout: "files footer "
+  layout: "diff flags files footer "
   behavior: default
   require_changes: false  # learn more in the Requiring Changes section below
   require_base: false        # [true :: must have a base report to post]
