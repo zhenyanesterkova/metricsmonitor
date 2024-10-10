@@ -52,7 +52,7 @@ func (s Sender) SendReport() {
 	ticker := time.NewTicker(s.ReportInterval)
 	for range ticker.C {
 
-		for name, _ := range s.Report.MetricsBuf.Metrics {
+		for name := range s.Report.MetricsBuf.Metrics {
 			s.Report.Mutex.Lock()
 			err := s.SendQueryUpdateMetric(name)
 			if err != nil {
