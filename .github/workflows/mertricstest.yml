@@ -7,23 +7,6 @@ on:
       - main
 
 jobs:
-  codecovtest:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@main
-      - uses: codecov/codecov-action@v4
-        with:
-          fail_ci_if_error: true # optional (default = false)
-          files: ./coverage1.xml,./coverage2.xml # optional
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          verbose: true # optional (default = false)
-        env:
-          CODECOV_TOKEN: 042d0d25-5365-4fe8-90bb-0523b13fb5df
-
   branchtest:
     runs-on: ubuntu-latest
 
