@@ -25,7 +25,7 @@ func updateMetricValue(s Repositorie) http.HandlerFunc {
 				return
 			default:
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
+				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
 		}

@@ -31,8 +31,8 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 
 func CreateTestMemStorage() (storage *memstorage.MemStorage) {
 	storage = memstorage.New()
-	storage.UpdateMetric("testCounter", "counter", "1")
-	storage.UpdateMetric("testGauge", "gauge", "2.5")
+	_ = storage.UpdateMetric("testCounter", "counter", "1")
+	_ = storage.UpdateMetric("testGauge", "gauge", "2.5")
 	return
 }
 
