@@ -16,7 +16,7 @@ jobs:
         run: |
             cd cmd/server
             go test -race -coverprofile=coverage.out -covermode=atomic
-            cd cmd/agent
+            cd ../agent
             go test -race -coverprofile=coverage.out -covermode=atomic
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
