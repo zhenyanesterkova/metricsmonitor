@@ -7,6 +7,22 @@ on:
       - main
 
 jobs:
+  codecovtest:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@main
+      - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true # optional (default = false)
+          files: ./coverage1.xml,./coverage2.xml # optional
+          flags: unittests # optional
+          name: codecov-umbrella # optional
+          verbose: true # optional (default = false)
+        env:
+          CODECOV_TOKEN: 042d0d25-5365-4fe8-90bb-0523b13fb5df
 
   branchtest:
     runs-on: ubuntu-latest
@@ -63,22 +79,6 @@ jobs:
           go build -buildvcs=false -o server
 
       - name: "Code increment #1"
-        if: |
-          github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter1' ||
-          github.head_ref == 'iter2' ||
-          github.head_ref == 'iter3' ||
-          github.head_ref == 'iter4' ||
-          github.head_ref == 'iter5' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
         run: |
           metricstest -test.v -test.run=^TestIteration1$ \
             -binary-path=cmd/server/server
