@@ -1,7 +1,7 @@
 package statistic
 
 import (
-	"errors"
+	"log"
 	"sync"
 	"time"
 
@@ -15,7 +15,7 @@ type Statistic struct {
 	MetricsBuf   *metric.MetricBuf
 }
 
-func (s Statistic) UpdateStatistic() error {
+func (s Statistic) UpdateStatistic() {
 
 	defer s.WGroup.Done()
 
@@ -24,9 +24,7 @@ func (s Statistic) UpdateStatistic() error {
 
 		err := s.MetricsBuf.UpdateMetrics(s.Mutex)
 		if err != nil {
-			return errors.New("error in updating the metrics: %v" + err.Error())
+			log.Printf("error in updating the metrics: %v", err.Error())
 		}
 	}
-
-	return nil
 }
