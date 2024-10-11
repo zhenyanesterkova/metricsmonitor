@@ -14,18 +14,21 @@ type RepositorieHandler struct {
 	Repo Repositorie
 }
 
-func NewRepositorieHandler(router *chi.Mux, rep Repositorie) {
-	handler := &RepositorieHandler{
+func NewRepositorieHandler(rep Repositorie) *RepositorieHandler {
+	return &RepositorieHandler{
 		Repo: rep,
 	}
 
+}
+
+func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 	router.Route("/", func(r chi.Router) {
 
-		r.Get("/", handler.GetAllMetrics())
+		r.Get("/", rh.GetAllMetrics())
 
-		r.Get("/value/{typeMetric}/{nameMetric}", handler.GetMetricValue())
+		r.Get("/value/{typeMetric}/{nameMetric}", rh.GetMetricValue())
 
-		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", handler.UpdateMetric())
+		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric())
 
 	})
 }

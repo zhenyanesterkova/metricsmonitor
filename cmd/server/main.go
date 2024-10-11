@@ -26,7 +26,8 @@ func main() {
 
 	router := chi.NewRouter()
 
-	handlers.NewRepositorieHandler(router, storage)
+	repoHandler := handlers.NewRepositorieHandler(storage)
+	repoHandler.InitChiRouter(router)
 
 	if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {
 		panic(err)
