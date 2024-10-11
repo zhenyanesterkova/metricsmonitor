@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"net/http"
+	"github.com/go-chi/chi/v5"
 )
 
 type Repositorie interface {
@@ -10,17 +10,22 @@ type Repositorie interface {
 	GetMetricValue(name, metricType string) (string, error)
 }
 
-func New(handlerName string, rep Repositorie) http.HandlerFunc {
-	switch handlerName {
-	case "updateMetricValue":
-		return updateMetricValue(rep)
-	case "getMetricValue":
-		return getMetricValue(rep)
-	case "getAllMetrics":
-		return getAllMetrics(rep)
-	default:
-		return func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "unknown handler name", http.StatusInternalServerError)
-		}
+type RepositorieHandler struct {
+	Repo Repositorie
+}
+
+func NewRepositorieHandler(router *chi.Mux, rep Repositorie) {
+	handler := &RepositorieHandler{
+		Repo: rep,
 	}
+
+	router.Route("/", func(r chi.Router) {
+
+		r.Get("/", handler.GetAllMetrics())
+
+		r.Get("/value/{typeMetric}/{nameMetric}", handler.GetMetricValue())
+
+		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", handler.UpdateMetric())
+
+	})
 }

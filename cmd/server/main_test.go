@@ -9,8 +9,10 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
@@ -58,7 +60,13 @@ func TestRouter(t *testing.T) {
 	})
 
 	memStorage := CreateTestMemStorage()
-	ts := httptest.NewServer(NewRouter(memStorage))
+
+	router := chi.NewRouter()
+
+	handlers.NewRepositorieHandler(router, memStorage)
+
+	ts := httptest.NewServer(router)
+
 	defer ts.Close()
 
 	tests := []struct {

@@ -7,14 +7,14 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
 
-func updateMetricValue(s Repositorie) http.HandlerFunc {
+func (rh *RepositorieHandler) UpdateMetric() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		metricType := chi.URLParam(r, "typeMetric")
 		metricName := chi.URLParam(r, "nameMetric")
 		metricValue := chi.URLParam(r, "valueMetric")
 
-		err := s.UpdateMetric(metricName, metricType, metricValue)
+		err := rh.Repo.UpdateMetric(metricName, metricType, metricValue)
 		if err != nil {
 			switch err {
 			case metricerrors.ErrInvalidName:

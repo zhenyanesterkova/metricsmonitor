@@ -18,20 +18,20 @@ func getConfig() config.Config {
 	return resConfig
 }
 
-func NewRouter(storage handlers.Repositorie) chi.Router {
-	router := chi.NewRouter()
+// func NewRouter(storage handlers.Repositorie) chi.Router {
+// 	router := chi.NewRouter()
 
-	router.Route("/", func(r chi.Router) {
-		r.Get("/", handlers.New("getAllMetrics", storage))
+// 	router.Route("/", func(r chi.Router) {
+// 		r.Get("/", handlers.New("getAllMetrics", storage))
 
-		r.Get("/value/{typeMetric}/{nameMetric}", handlers.New("getMetricValue", storage))
+// 		r.Get("/value/{typeMetric}/{nameMetric}", handlers.New("getMetricValue", storage))
 
-		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", handlers.New("updateMetricValue", storage))
+// 		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", handlers.New("updateMetricValue", storage))
 
-	})
+// 	})
 
-	return router
-}
+// 	return router
+// }
 
 func main() {
 
@@ -39,7 +39,11 @@ func main() {
 
 	storage := memstorage.New()
 
-	if err := http.ListenAndServe(cfg.SConfig.Address, NewRouter(storage)); err != nil {
+	router := chi.NewRouter()
+
+	handlers.NewRepositorieHandler(router, storage)
+
+	if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {
 		panic(err)
 	}
 

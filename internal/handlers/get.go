@@ -9,9 +9,9 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
 
-func getAllMetrics(s Repositorie) http.HandlerFunc {
+func (rh *RepositorieHandler) GetAllMetrics() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, err := s.GetAllMetrics()
+		res, err := rh.Repo.GetAllMetrics()
 		if err != nil {
 			http.Error(w, "error get metrics: "+err.Error(), http.StatusInternalServerError)
 		}
@@ -29,11 +29,11 @@ func getAllMetrics(s Repositorie) http.HandlerFunc {
 		}
 	}
 }
-func getMetricValue(s Repositorie) http.HandlerFunc {
+func (rh *RepositorieHandler) GetMetricValue() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := chi.URLParam(r, "nameMetric")
 		metricType := chi.URLParam(r, "typeMetric")
-		res, err := s.GetMetricValue(name, metricType)
+		res, err := rh.Repo.GetMetricValue(name, metricType)
 		if err != nil {
 			if err == metricerrors.ErrUnknownMetric || err == metricerrors.ErrInvalidType {
 				w.WriteHeader(http.StatusNotFound)
