@@ -18,21 +18,6 @@ func getConfig() config.Config {
 	return resConfig
 }
 
-// func NewRouter(storage handlers.Repositorie) chi.Router {
-// 	router := chi.NewRouter()
-
-// 	router.Route("/", func(r chi.Router) {
-// 		r.Get("/", handlers.New("getAllMetrics", storage))
-
-// 		r.Get("/value/{typeMetric}/{nameMetric}", handlers.New("getMetricValue", storage))
-
-// 		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", handlers.New("updateMetricValue", storage))
-
-// 	})
-
-// 	return router
-// }
-
 func main() {
 
 	cfg := getConfig()
