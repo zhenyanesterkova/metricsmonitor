@@ -4,7 +4,7 @@ import "os"
 
 type ConfigBuilder interface {
 	SetServerConfig()
-	GetConfig() Config
+	Build() Config
 }
 
 func GetConfigBuilder() ConfigBuilder {

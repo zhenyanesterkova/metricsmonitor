@@ -15,7 +15,8 @@ func (fc *flagConfig) SetServerConfig() {
 	flag.Parse()
 }
 
-func (fc *flagConfig) GetConfig() Config {
+func (fc *flagConfig) Build() Config {
+	fc.SetServerConfig()
 	return Config{
 		SConfig: ServerConfig{
 			Address: fc.sConfig.Address,

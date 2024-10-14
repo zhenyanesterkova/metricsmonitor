@@ -3,24 +3,17 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
+
+	"github.com/go-chi/chi/v5"
 )
-
-func getConfig() config.Config {
-	cfgBuilder := config.GetConfigBuilder()
-	cfgDirector := config.NewConfigDirector(cfgBuilder)
-	resConfig := cfgDirector.BuildConfig()
-
-	return resConfig
-}
 
 func main() {
 
-	cfg := getConfig()
+	cfgBuilder := config.GetConfigBuilder()
+	cfg := cfgBuilder.Build()
 
 	storage := memstorage.New()
 

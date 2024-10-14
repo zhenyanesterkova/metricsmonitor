@@ -60,10 +60,22 @@ func (fc *flagConfig) SetReportInterval() error {
 	return nil
 }
 
-func (fc *flagConfig) GetConfig() Config {
+func (fc *flagConfig) Build() (Config, error) {
+	fc.SetAddress()
+
+	err := fc.SetPollInterval()
+	if err != nil {
+		return Config{}, err
+	}
+
+	err = fc.SetReportInterval()
+	if err != nil {
+		return Config{}, err
+	}
+
 	return Config{
 		Address:        fc.address,
 		PollInterval:   fc.pollInterval,
 		ReportInterval: fc.reportInterval,
-	}
+	}, nil
 }

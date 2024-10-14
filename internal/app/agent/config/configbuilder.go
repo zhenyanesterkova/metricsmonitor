@@ -9,7 +9,7 @@ type ConfigBuilder interface {
 	SetAddress()
 	SetPollInterval() error
 	SetReportInterval() error
-	GetConfig() Config
+	Build() (Config, error)
 }
 
 func GetConfigBuilder() ConfigBuilder {

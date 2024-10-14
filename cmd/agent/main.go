@@ -11,23 +11,13 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/statistic"
 )
 
-func getConfig() (config.Config, error) {
-	cfgBuilder := config.GetConfigBuilder()
-	cfgDirector := config.NewConfigDirector(cfgBuilder)
-	resConfig, err := cfgDirector.BuildConfig()
-	if err != nil {
-		return resConfig, err
-	}
-
-	return resConfig, nil
-}
-
 func main() {
 
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
-	cfg, err := getConfig()
+	cfgBuilder := config.GetConfigBuilder()
+	cfg, err := cfgBuilder.Build()
 	if err != nil {
 		log.Fatalf("an error occurred while reading the config %v", err)
 	}

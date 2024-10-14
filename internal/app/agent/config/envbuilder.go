@@ -41,10 +41,22 @@ func (ec *envConfig) SetReportInterval() error {
 	return nil
 }
 
-func (ec *envConfig) GetConfig() Config {
+func (ec *envConfig) Build() (Config, error) {
+	ec.SetAddress()
+
+	err := ec.SetPollInterval()
+	if err != nil {
+		return Config{}, err
+	}
+
+	err = ec.SetReportInterval()
+	if err != nil {
+		return Config{}, err
+	}
+
 	return Config{
 		Address:        ec.address,
 		PollInterval:   ec.pollInterval,
 		ReportInterval: ec.reportInterval,
-	}
+	}, nil
 }

@@ -9,11 +9,12 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {

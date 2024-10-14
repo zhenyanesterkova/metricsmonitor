@@ -14,7 +14,8 @@ func (ec *envConfig) SetServerConfig() {
 	ec.sConfig.Address = os.Getenv("ADDRESS")
 }
 
-func (ec *envConfig) GetConfig() Config {
+func (ec *envConfig) Build() Config {
+	ec.SetServerConfig()
 	return Config{
 		SConfig: ServerConfig{
 			ec.sConfig.Address,
