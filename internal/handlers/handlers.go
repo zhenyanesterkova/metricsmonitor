@@ -24,11 +24,11 @@ func NewRepositorieHandler(rep Repositorie) *RepositorieHandler {
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 	router.Route("/", func(r chi.Router) {
 
-		r.Get("/", rh.GetAllMetrics())
+		r.Get("/", rh.GetAllMetrics)
 
-		r.Get("/value/{typeMetric}/{nameMetric}", rh.GetMetricValue())
+		r.Get("/value/{typeMetric}/{nameMetric}", rh.GetMetricValue)
 
-		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric())
+		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
 
 	})
 }

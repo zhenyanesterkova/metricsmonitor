@@ -3,31 +3,30 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
+
+	"github.com/go-chi/chi/v5"
 )
 
-func (rh *RepositorieHandler) UpdateMetric() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 
-		metricType := chi.URLParam(r, "typeMetric")
-		metricName := chi.URLParam(r, "nameMetric")
-		metricValue := chi.URLParam(r, "valueMetric")
+	metricType := chi.URLParam(r, "typeMetric")
+	metricName := chi.URLParam(r, "nameMetric")
+	metricValue := chi.URLParam(r, "valueMetric")
 
-		err := rh.Repo.UpdateMetric(metricName, metricType, metricValue)
-		if err != nil {
-			switch err {
-			case metricerrors.ErrInvalidName:
-				w.WriteHeader(http.StatusNotFound)
-				return
-			case metricerrors.ErrParseValue, metricerrors.ErrUnknownType, metricerrors.ErrInvalidType:
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
+	err := rh.Repo.UpdateMetric(metricName, metricType, metricValue)
+	if err != nil {
+		switch err {
+		case metricerrors.ErrInvalidName:
+			w.WriteHeader(http.StatusNotFound)
+
+		case metricerrors.ErrParseValue, metricerrors.ErrUnknownType, metricerrors.ErrInvalidType:
+			w.WriteHeader(http.StatusBadRequest)
+
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+
 		}
 	}
 }
