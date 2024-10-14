@@ -24,10 +24,7 @@ jobs:
 
       - name: Run tests
         run: |
-            cd cmd/server
-            go test -race -coverprofile=coverage.out -covermode=atomic
-            cd ../agent
-            go test -race -coverprofile=coverage.out -covermode=atomic
+            go test ./... -race -coverprofile=coverage.out -covermode=atomic
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v4
         with:
