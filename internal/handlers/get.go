@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"text/template"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Request) {

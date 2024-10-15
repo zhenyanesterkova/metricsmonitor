@@ -3,11 +3,11 @@ package main
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func main() {

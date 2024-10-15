@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
-
 	"github.com/go-chi/chi/v5"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
 
 func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Request) {

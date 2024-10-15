@@ -5,9 +5,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
 )
 
 var metricsTest = metric.NewMetricBuf()
