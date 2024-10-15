@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"net/http"
-	"path/filepath"
 	"text/template"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
+	"github.com/zhenyanesterkova/metricsmonitor/web"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -17,13 +17,12 @@ func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "error get metrics: "+err.Error(), http.StatusInternalServerError)
 	}
 
-	templatePath := filepath.Join("../../", "web", "template", "allMetricsView.html")
-	tmplIndex, err := template.ParseFiles(templatePath)
+	tmplMetrics, err := template.ParseFS(web.Templates, "template/allMetricsView.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 	}
-	err = tmplIndex.ExecuteTemplate(w, "metrics", res)
+	err = tmplMetrics.ExecuteTemplate(w, "metrics", res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 

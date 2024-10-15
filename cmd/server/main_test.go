@@ -5,12 +5,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 	"text/template"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
+	"github.com/zhenyanesterkova/metricsmonitor/web"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -41,12 +41,12 @@ func CreateTestMemStorage() (storage *memstorage.MemStorage) {
 
 func getExpectedHTML(templateName, nameData string, data interface{}) (string, error) {
 	buf := bytes.NewBufferString("")
-	index := filepath.Join("../../", "web", "template", templateName)
-	tmplIndex, err := template.ParseFiles(index)
+
+	tmpl, err := template.ParseFS(web.Templates, "template/"+templateName)
 	if err != nil {
 		return "", err
 	}
-	err = tmplIndex.ExecuteTemplate(buf, nameData, data)
+	err = tmpl.ExecuteTemplate(buf, nameData, data)
 	if err != nil {
 		return "", err
 	}
