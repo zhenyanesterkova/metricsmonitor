@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/middlewares"
 )
 
 type Repositorie interface {
@@ -11,17 +14,20 @@ type Repositorie interface {
 }
 
 type RepositorieHandler struct {
-	Repo Repositorie
+	Repo   Repositorie
+	Logger *logrus.Logger
 }
 
-func NewRepositorieHandler(rep Repositorie) *RepositorieHandler {
+func NewRepositorieHandler(rep Repositorie, log *logrus.Logger) *RepositorieHandler {
 	return &RepositorieHandler{
-		Repo: rep,
+		Repo:   rep,
+		Logger: log,
 	}
 
 }
 
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
+	router.Use(middlewares.RequestLogger(rh.Logger))
 	router.Route("/", func(r chi.Router) {
 
 		r.Get("/", rh.GetAllMetrics)

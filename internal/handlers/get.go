@@ -15,19 +15,20 @@ func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Reque
 	res, err := rh.Repo.GetAllMetrics()
 	if err != nil {
 		http.Error(w, "error get metrics: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	tmplMetrics, err := template.ParseFS(web.Templates, "template/allMetricsView.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-
+		return
 	}
 	err = tmplMetrics.ExecuteTemplate(w, "metrics", res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-
+		return
 	}
-
+	w.WriteHeader(http.StatusOK)
 }
 func (rh *RepositorieHandler) GetMetricValue(w http.ResponseWriter, r *http.Request) {
 
@@ -37,8 +38,10 @@ func (rh *RepositorieHandler) GetMetricValue(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		if err == metricerrors.ErrUnknownMetric || err == metricerrors.ErrInvalidType {
 			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 	}
+	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(res))
 
 }

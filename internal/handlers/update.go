@@ -28,5 +28,7 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 			_, _ = w.Write([]byte(err.Error()))
 
 		}
+		return
 	}
+	w.WriteHeader(http.StatusOK)
 }
