@@ -7,7 +7,7 @@ import (
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/handlers"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
@@ -26,7 +26,7 @@ func main() {
 
 	router := chi.NewRouter()
 
-	repoHandler := handlers.NewRepositorieHandler(storage)
+	repoHandler := handler.NewRepositorieHandler(storage)
 	repoHandler.InitChiRouter(router)
 
 	log.Debugf("Start Server on %s", cfg.SConfig.Address)
