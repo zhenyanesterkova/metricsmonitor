@@ -169,7 +169,10 @@ func (buf *MetricBuf) UpdateMetrics(mutex *sync.Mutex) error {
 	buf.Metrics["Sys"].update(statStruct.Sys)
 	buf.Metrics["TotalAlloc"].update(statStruct.TotalAlloc)
 
-	buf.Metrics["PollCount"].updateCounter()
+	err := buf.Metrics["PollCount"].updateCounter()
+	if err != nil {
+		return err
+	}
 
 	buf.Metrics["RandomValue"].update(rand.Float64())
 
