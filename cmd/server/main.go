@@ -16,16 +16,17 @@ func main() {
 	cfgBuilder := config.GetConfigBuilder()
 	cfg := cfgBuilder.Build()
 
-	logger := logger.InstanceLogger(cfg.LConfig.Level)
+	log := logger.Logger()
+	logger.SetLevelForLog(cfg.LConfig.Level)
 
 	storage := memstorage.New()
 
 	router := chi.NewRouter()
 
-	repoHandler := handlers.NewRepositorieHandler(storage, logger)
+	repoHandler := handlers.NewRepositorieHandler(storage)
 	repoHandler.InitChiRouter(router)
 
-	logger.Debugf("Start Server on %s", cfg.SConfig.Address)
+	log.Debugf("Start Server on %s", cfg.SConfig.Address)
 	if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {
 		panic(err)
 	}

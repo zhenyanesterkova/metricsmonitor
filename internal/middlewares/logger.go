@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 )
 
 type (
@@ -30,33 +32,33 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-func RequestLogger(log *logrus.Logger) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		logFunc := func(w http.ResponseWriter, r *http.Request) {
+func RequestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			start := time.Now()
-			responseData := &responseData{
-				status: 0,
-				size:   0,
-			}
+		log := logger.Logger()
 
-			lw := loggingResponseWriter{
-				ResponseWriter: w,
-				responseData:   responseData,
-			}
+		start := time.Now()
 
-			defer func() {
-				log.WithFields(logrus.Fields{
-					"URI":      r.URL.Path,
-					"Method":   r.Method,
-					"Duration": time.Since(start),
-					"Status":   lw.responseData.status,
-					"Size":     lw.responseData.size,
-				}).Info("got incoming HTTP request")
-			}()
-
-			next.ServeHTTP(&lw, r)
+		responseData := &responseData{
+			status: 0,
+			size:   0,
 		}
-		return http.HandlerFunc(logFunc)
-	}
+
+		lw := loggingResponseWriter{
+			ResponseWriter: w,
+			responseData:   responseData,
+		}
+
+		defer func() {
+			log.WithFields(logrus.Fields{
+				"URI":      r.URL.Path,
+				"Method":   r.Method,
+				"Duration": time.Since(start),
+				"Status":   lw.responseData.status,
+				"Size":     lw.responseData.size,
+			}).Info("got incoming HTTP request")
+		}()
+
+		next.ServeHTTP(&lw, r)
+	})
 }
