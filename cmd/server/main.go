@@ -17,7 +17,10 @@ func main() {
 	cfg := cfgBuilder.Build()
 
 	log := logger.Logger()
-	logger.SetLevelForLog(cfg.LConfig.Level)
+	err := logger.SetLevelForLog(cfg.LConfig.Level)
+	if err != nil {
+		log.Errorf("can not parse log level: %v", err)
+	}
 
 	storage := memstorage.New()
 

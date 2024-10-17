@@ -63,7 +63,8 @@ func TestRouter(t *testing.T) {
 
 	memStorage := CreateTestMemStorage()
 
-	logger.SetLevelForLog("debug")
+	err := logger.SetLevelForLog("debug")
+	require.NoError(t, err)
 
 	router := chi.NewRouter()
 
