@@ -124,7 +124,7 @@ func NewMetricBuf() *MetricBuf {
 		"PollCount": &metric{
 			name:       "PollCount",
 			metricType: "counter",
-			value:      "0",
+			value:      0,
 		},
 		"RandomValue": &metric{
 			name:       "RandomValue",
