@@ -63,12 +63,13 @@ func TestRouter(t *testing.T) {
 
 	memStorage := CreateTestMemStorage()
 
+	logger := logger.NewLogrusLogger()
 	err := logger.SetLevelForLog("debug")
 	require.NoError(t, err)
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage)
+	repoHandler := handler.NewRepositorieHandler(memStorage, logger)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)

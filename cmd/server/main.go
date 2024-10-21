@@ -16,20 +16,20 @@ func main() {
 	cfgBuilder := config.GetConfigBuilder()
 	cfg := cfgBuilder.Build()
 
-	log := logger.Logger()
+	logger := logger.NewLogrusLogger()
 	err := logger.SetLevelForLog(cfg.LConfig.Level)
 	if err != nil {
-		log.Errorf("can not parse log level: %v", err)
+		logger.LogrusLog.Errorf("can not parse log level: %v", err)
 	}
 
 	storage := memstorage.New()
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(storage)
+	repoHandler := handler.NewRepositorieHandler(storage, logger)
 	repoHandler.InitChiRouter(router)
 
-	log.Debugf("Start Server on %s", cfg.SConfig.Address)
+	logger.LogrusLog.Debugf("Start Server on %s", cfg.SConfig.Address)
 	if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {
 		panic(err)
 	}

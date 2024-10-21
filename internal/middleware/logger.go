@@ -9,17 +9,15 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 )
 
-type (
-	responseData struct {
-		status int
-		size   int
-	}
+type responseData struct {
+	status int
+	size   int
+}
 
-	loggingResponseWriter struct {
-		http.ResponseWriter
-		responseData *responseData
-	}
-)
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	responseData *responseData
+}
 
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
@@ -32,10 +30,20 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-func RequestLogger(next http.Handler) http.Handler {
+type LoggerMiddleware struct {
+	Logger logger.LogrusLogger
+}
+
+func NewLoggerMiddleware(log logger.LogrusLogger) LoggerMiddleware {
+	return LoggerMiddleware{
+		Logger: log,
+	}
+}
+
+func (lm LoggerMiddleware) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		log := logger.Logger()
+		log := lm.Logger.LogrusLog
 
 		start := time.Now()
 
