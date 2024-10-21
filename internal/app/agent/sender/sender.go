@@ -27,7 +27,7 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 
 	upMetric := s.Report.MetricsBuf.Metrics[metricName]
 
-	url := fmt.Sprintf("http://%s/update/%s/%s/%s", s.Endpoint, upMetric.GetType(), upMetric.GetName(), upMetric.GetValue())
+	url := fmt.Sprintf("http://%s/update/%s/%s/%s", s.Endpoint, upMetric.Type(), upMetric.Name(), upMetric.StringValue())
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {

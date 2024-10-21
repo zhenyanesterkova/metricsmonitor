@@ -1,7 +1,10 @@
-package handlers
+package handler
 
 import (
 	"github.com/go-chi/chi/v5"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/middleware"
 )
 
 type Repositorie interface {
@@ -11,17 +14,21 @@ type Repositorie interface {
 }
 
 type RepositorieHandler struct {
-	Repo Repositorie
+	Repo   Repositorie
+	Logger logger.LogrusLogger
 }
 
-func NewRepositorieHandler(rep Repositorie) *RepositorieHandler {
+func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger) *RepositorieHandler {
 	return &RepositorieHandler{
-		Repo: rep,
+		Repo:   rep,
+		Logger: log,
 	}
 
 }
 
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
+	mdlWare := middleware.NewLoggerMiddleware(rh.Logger)
+	router.Use(mdlWare.RequestLogger)
 	router.Route("/", func(r chi.Router) {
 
 		r.Get("/", rh.GetAllMetrics)
