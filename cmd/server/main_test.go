@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
@@ -35,8 +36,18 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 
 func CreateTestMemStorage() (storage *memstorage.MemStorage) {
 	storage = memstorage.New()
-	_ = storage.UpdateMetric("testCounter", "counter", "1")
-	_ = storage.UpdateMetric("testGauge", "gauge", "2.5")
+
+	testCounter := metric.New("counter")
+	testCounter.ID = "testCounter"
+	*testCounter.Delta = 1
+
+	_, _ = storage.UpdateMetric(testCounter)
+
+	testGauge := metric.New("gauge")
+	testGauge.ID = "testGauge"
+	*testGauge.Value = 2.5
+
+	_, _ = storage.UpdateMetric(testGauge)
 	return
 }
 
@@ -82,8 +93,8 @@ func TestRouter(t *testing.T) {
 		url                           string
 		wantRespBody                  string
 		metricName                    string
-		wantStorageCounterMetricValue string
-		wantStorageGaugeMetricValue   string
+		wantStorageCounterMetricValue int64
+		wantStorageGaugeMetricValue   float64
 		status                        int
 	}{
 		{
@@ -120,7 +131,7 @@ func TestRouter(t *testing.T) {
 			url:                           "/update/counter/testCounter/1",
 			wantRespBody:                  "",
 			metricName:                    "testCounter",
-			wantStorageCounterMetricValue: "2",
+			wantStorageCounterMetricValue: int64(2),
 			status:                        http.StatusOK,
 		},
 		{
@@ -129,7 +140,7 @@ func TestRouter(t *testing.T) {
 			url:                           "/update/counter/testCounter/ttt",
 			wantRespBody:                  "",
 			metricName:                    "testCounter",
-			wantStorageCounterMetricValue: "2",
+			wantStorageCounterMetricValue: int64(2),
 			status:                        http.StatusBadRequest,
 		},
 		{
@@ -138,7 +149,7 @@ func TestRouter(t *testing.T) {
 			url:                           "/update/gauge/testCounter/1",
 			wantRespBody:                  "",
 			metricName:                    "testCounter",
-			wantStorageCounterMetricValue: "2",
+			wantStorageCounterMetricValue: int64(2),
 			status:                        http.StatusBadRequest,
 		},
 		{
@@ -147,7 +158,7 @@ func TestRouter(t *testing.T) {
 			url:                           "/update/counter/testCounterNew/1",
 			wantRespBody:                  "",
 			metricName:                    "testCounterNew",
-			wantStorageCounterMetricValue: "1",
+			wantStorageCounterMetricValue: int64(1),
 			status:                        http.StatusOK,
 		},
 		{
@@ -156,7 +167,7 @@ func TestRouter(t *testing.T) {
 			url:                         "/update/gauge/testGauge/1.5",
 			wantRespBody:                "",
 			metricName:                  "testGauge",
-			wantStorageGaugeMetricValue: "1.5",
+			wantStorageGaugeMetricValue: 1.5,
 			status:                      http.StatusOK,
 		},
 		{
@@ -165,7 +176,7 @@ func TestRouter(t *testing.T) {
 			url:                         "/update/gauge/testGauge/ttt",
 			wantRespBody:                "",
 			metricName:                  "testGauge",
-			wantStorageGaugeMetricValue: "1.5",
+			wantStorageGaugeMetricValue: 1.5,
 			status:                      http.StatusBadRequest,
 		},
 		{
@@ -174,7 +185,7 @@ func TestRouter(t *testing.T) {
 			url:                         "/update/counter/testGauge/1",
 			wantRespBody:                "",
 			metricName:                  "testGauge",
-			wantStorageGaugeMetricValue: "1.5",
+			wantStorageGaugeMetricValue: 1.5,
 			status:                      http.StatusBadRequest,
 		},
 		{
@@ -183,7 +194,7 @@ func TestRouter(t *testing.T) {
 			url:                         "/update/gauge/testGaugeNew/3.6",
 			wantRespBody:                "",
 			metricName:                  "testGaugeNew",
-			wantStorageGaugeMetricValue: "3.6",
+			wantStorageGaugeMetricValue: 3.6,
 			status:                      http.StatusOK,
 		},
 		{
@@ -223,15 +234,15 @@ func TestRouter(t *testing.T) {
 			assert.Equal(t, test.status, resp.StatusCode)
 			assert.Equal(t, test.wantRespBody, respBody)
 
-			if test.wantStorageCounterMetricValue != "" {
+			if test.wantStorageCounterMetricValue != 0 {
 				actualValue, err := memStorage.GetMetricValue(test.metricName, "counter")
 				require.NoError(t, err)
-				assert.Equal(t, test.wantStorageCounterMetricValue, actualValue)
+				assert.Equal(t, test.wantStorageCounterMetricValue, *actualValue.Delta)
 			}
-			if test.wantStorageGaugeMetricValue != "" {
+			if test.wantStorageGaugeMetricValue != 0.0 {
 				actualValue, err := memStorage.GetMetricValue(test.metricName, "gauge")
 				require.NoError(t, err)
-				assert.Equal(t, test.wantStorageGaugeMetricValue, actualValue)
+				assert.Equal(t, test.wantStorageGaugeMetricValue, *actualValue.Value)
 			}
 		})
 	}

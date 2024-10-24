@@ -1,29 +1,48 @@
 package metric
 
-import (
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/counter"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/gauge"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
-)
-
 const (
 	TypeGauge   = "gauge"
 	TypeCounter = "counter"
 )
 
-type Metric interface {
-	SetValue(string) error
-	GetType() string
-	String() string
+type Metric struct {
+	ID    string `json:"id"`
+	MType string `json:"type"`
+	MetricGauge
+	MetricCounter
 }
 
-func New(typeMetric string) (Metric, error) {
+func (m *Metric) GetType() string {
+	return m.MType
+}
+
+func (m *Metric) String() string {
+	switch m.MType {
+	case TypeGauge:
+		return m.MetricGauge.String()
+	case TypeCounter:
+		return m.MetricCounter.String()
+	default:
+		return ""
+	}
+}
+
+func New(typeMetric string) Metric {
 	switch typeMetric {
 	case TypeGauge:
-		return gauge.NewMetricGauge(), nil
+		return Metric{
+			MType:       TypeGauge,
+			MetricGauge: NewMetricGauge(),
+		}
 	case TypeCounter:
-		return counter.NewMetricCounter(), nil
+		return Metric{
+			MType:         TypeCounter,
+			MetricCounter: NewMetricCounter(),
+		}
 	default:
-		return nil, metricerrors.ErrUnknownType
+		return Metric{
+			MetricGauge:   NewMetricGauge(),
+			MetricCounter: NewMetricCounter(),
+		}
 	}
 }

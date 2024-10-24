@@ -6,39 +6,62 @@ import (
 	"reflect"
 )
 
-type metric struct {
-	name       string
-	metricType string
-	value      any
+type Metric struct {
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+	val   any      `json:"-"`
 }
 
-func (m *metric) StringValue() string {
-	return fmt.Sprint(m.value)
+func (m *Metric) StringValue() string {
+	if m.Delta == nil && m.Value == nil {
+		return fmt.Sprint(m.val)
+	}
+	if m.Delta == nil {
+		return fmt.Sprint(*(m.Value))
+	}
+	return fmt.Sprint(*(m.Delta))
 }
 
-func (m *metric) Type() string {
-	return m.metricType
+func (m *Metric) updateGauge(val any) {
+	m.val = val
 }
 
-func (m *metric) Name() string {
-	return m.name
-}
+func (m *Metric) setGaugeValue() error {
 
-func (m *metric) update(val any) {
-	m.value = val
-}
-func (m *metric) updateCounter() error {
-
-	refValue := reflect.ValueOf(m.value)
-	refTypeInt64 := reflect.TypeOf(reflect.Int64)
-
-	canConvertToInt64 := refValue.CanConvert(refTypeInt64)
-	if !canConvertToInt64 {
-		return errors.New("can not convert value of metric PollCount")
+	if m.Value == nil {
+		temp := float64(0)
+		m.Value = &temp
 	}
 
-	value := refValue.Int()
-	m.value = value + 1
+	refValue := reflect.ValueOf(m.val)
+	refGaugeValue := reflect.ValueOf(m.Value)
+	refGaugeValueElem := refGaugeValue.Elem()
+	refGaugeValueType := refGaugeValueElem.Type()
+
+	if refValue.Kind() == reflect.Ptr {
+		if refValue.IsNil() {
+			return errors.New("the gauge metric value has not been updated: value is zero pointer")
+		}
+		refValue = refValue.Elem()
+	}
+
+	canConvert := refValue.CanConvert(refGaugeValueType)
+	if !canConvert {
+		return errors.New("can not convert value to gauge; the gauge metric value has not been updated")
+	}
+
+	value := refValue.Convert(refGaugeValueType).Float()
+	*(m.Value) = value
 
 	return nil
+}
+
+func (m *Metric) updateCounter() {
+	if m.Delta == nil {
+		temp := int64(0)
+		m.Delta = &temp
+	}
+	*(m.Delta) = *(m.Delta) + 1
 }

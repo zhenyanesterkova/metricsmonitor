@@ -4,13 +4,14 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/middleware"
 )
 
 type Repositorie interface {
-	UpdateMetric(name string, typeMetric string, val string) error
+	UpdateMetric(metric.Metric) (metric.Metric, error)
 	GetAllMetrics() ([][2]string, error)
-	GetMetricValue(name, metricType string) (string, error)
+	GetMetricValue(name, typeMetric string) (metric.Metric, error)
 }
 
 type RepositorieHandler struct {
@@ -32,10 +33,15 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 	router.Route("/", func(r chi.Router) {
 
 		r.Get("/", rh.GetAllMetrics)
+		r.Route("/value/", func(r chi.Router) {
+			r.Post("/", rh.GetMetricValueJSON)
+			r.Get("/{typeMetric}/{nameMetric}", rh.GetMetricValue)
+		})
 
-		r.Get("/value/{typeMetric}/{nameMetric}", rh.GetMetricValue)
-
-		r.Post("/update/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
+		r.Route("/update/", func(r chi.Router) {
+			r.Post("/", rh.UpdateMetricJSON)
+			r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
+		})
 
 	})
 }

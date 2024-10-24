@@ -6,132 +6,148 @@ import (
 	"sync"
 )
 
+const (
+	GaugeType   = "gauge"
+	CounterType = "counter"
+)
+
 type MetricBuf struct {
-	Metrics map[string]*metric
+	Metrics map[string]*Metric
 }
 
 func NewMetricBuf() *MetricBuf {
 	buffer := &MetricBuf{}
-	buffer.Metrics = map[string]*metric{
-		"Alloc": &metric{
-			name:       "Alloc",
-			metricType: "gauge",
+	buffer.Metrics = map[string]*Metric{
+		"Alloc": &Metric{
+			ID:    "Alloc",
+			MType: "gauge",
 		},
-		"BuckHashSys": &metric{
-			name:       "BuckHashSys",
-			metricType: "gauge",
+		"BuckHashSys": &Metric{
+			ID:    "BuckHashSys",
+			MType: "gauge",
 		},
-		"Frees": &metric{
-			name:       "Frees",
-			metricType: "gauge",
+		"Frees": &Metric{
+			ID:    "Frees",
+			MType: "gauge",
 		},
-		"GCCPUFraction": &metric{
-			name:       "GCCPUFraction",
-			metricType: "gauge",
+		"GCCPUFraction": &Metric{
+			ID:    "GCCPUFraction",
+			MType: "gauge",
 		},
-		"GCSys": &metric{
-			name:       "GCSys",
-			metricType: "gauge",
+		"GCSys": &Metric{
+			ID:    "GCSys",
+			MType: "gauge",
 		},
-		"HeapAlloc": &metric{
-			name:       "HeapAlloc",
-			metricType: "gauge",
+		"HeapAlloc": &Metric{
+			ID:    "HeapAlloc",
+			MType: "gauge",
 		},
-		"HeapIdle": &metric{
-			name:       "HeapIdle",
-			metricType: "gauge",
+		"HeapIdle": &Metric{
+			ID:    "HeapIdle",
+			MType: "gauge",
 		},
-		"HeapInuse": &metric{
-			name:       "HeapInuse",
-			metricType: "gauge",
+		"HeapInuse": &Metric{
+			ID:    "HeapInuse",
+			MType: "gauge",
 		},
-		"HeapObjects": &metric{
-			name:       "HeapObjects",
-			metricType: "gauge",
+		"HeapObjects": &Metric{
+			ID:    "HeapObjects",
+			MType: "gauge",
 		},
-		"HeapReleased": &metric{
-			name:       "HeapReleased",
-			metricType: "gauge",
+		"HeapReleased": &Metric{
+			ID:    "HeapReleased",
+			MType: "gauge",
 		},
-		"HeapSys": &metric{
-			name:       "HeapSys",
-			metricType: "gauge",
+		"HeapSys": &Metric{
+			ID:    "HeapSys",
+			MType: "gauge",
 		},
-		"LastGC": &metric{
-			name:       "LastGC",
-			metricType: "gauge",
+		"LastGC": &Metric{
+			ID:    "LastGC",
+			MType: "gauge",
 		},
-		"Lookups": &metric{
-			name:       "Lookups",
-			metricType: "gauge",
+		"Lookups": &Metric{
+			ID:    "Lookups",
+			MType: "gauge",
 		},
-		"MCacheInuse": &metric{
-			name:       "MCacheInuse",
-			metricType: "gauge",
+		"MCacheInuse": &Metric{
+			ID:    "MCacheInuse",
+			MType: "gauge",
 		},
-		"MCacheSys": &metric{
-			name:       "MCacheSys",
-			metricType: "gauge",
+		"MCacheSys": &Metric{
+			ID:    "MCacheSys",
+			MType: "gauge",
 		},
-		"MSpanInuse": &metric{
-			name:       "MSpanInuse",
-			metricType: "gauge",
+		"MSpanInuse": &Metric{
+			ID:    "MSpanInuse",
+			MType: "gauge",
 		},
-		"MSpanSys": &metric{
-			name:       "MSpanSys",
-			metricType: "gauge",
+		"MSpanSys": &Metric{
+			ID:    "MSpanSys",
+			MType: "gauge",
 		},
-		"Mallocs": &metric{
-			name:       "Mallocs",
-			metricType: "gauge",
+		"Mallocs": &Metric{
+			ID:    "Mallocs",
+			MType: "gauge",
 		},
-		"NextGC": &metric{
-			name:       "NextGC",
-			metricType: "gauge",
+		"NextGC": &Metric{
+			ID:    "NextGC",
+			MType: "gauge",
 		},
-		"NumForcedGC": &metric{
-			name:       "NumForcedGC",
-			metricType: "gauge",
+		"NumForcedGC": &Metric{
+			ID:    "NumForcedGC",
+			MType: "gauge",
 		},
-		"NumGC": &metric{
-			name:       "NumGC",
-			metricType: "gauge",
+		"NumGC": &Metric{
+			ID:    "NumGC",
+			MType: "gauge",
 		},
-		"OtherSys": &metric{
-			name:       "OtherSys",
-			metricType: "gauge",
+		"OtherSys": &Metric{
+			ID:    "OtherSys",
+			MType: "gauge",
 		},
-		"PauseTotalNs": &metric{
-			name:       "PauseTotalNs",
-			metricType: "gauge",
+		"PauseTotalNs": &Metric{
+			ID:    "PauseTotalNs",
+			MType: "gauge",
 		},
-		"StackInuse": &metric{
-			name:       "StackInuse",
-			metricType: "gauge",
+		"StackInuse": &Metric{
+			ID:    "StackInuse",
+			MType: "gauge",
 		},
-		"StackSys": &metric{
-			name:       "StackSys",
-			metricType: "gauge",
+		"StackSys": &Metric{
+			ID:    "StackSys",
+			MType: "gauge",
 		},
-		"Sys": &metric{
-			name:       "Sys",
-			metricType: "gauge",
+		"Sys": &Metric{
+			ID:    "Sys",
+			MType: "gauge",
 		},
-		"TotalAlloc": &metric{
-			name:       "TotalAlloc",
-			metricType: "gauge",
+		"TotalAlloc": &Metric{
+			ID:    "TotalAlloc",
+			MType: "gauge",
 		},
-		"PollCount": &metric{
-			name:       "PollCount",
-			metricType: "counter",
-			value:      0,
+		"PollCount": &Metric{
+			ID:    "PollCount",
+			MType: "counter",
 		},
-		"RandomValue": &metric{
-			name:       "RandomValue",
-			metricType: "gauge",
+		"RandomValue": &Metric{
+			ID:    "RandomValue",
+			MType: "gauge",
 		},
 	}
 	return buffer
+}
+
+func (buf *MetricBuf) SetGaugeValuesInMetrics() error {
+	for _, metric := range buf.Metrics {
+		if metric.MType == GaugeType {
+			err := metric.setGaugeValue()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (buf *MetricBuf) UpdateMetrics(mutex *sync.Mutex) error {
@@ -141,40 +157,37 @@ func (buf *MetricBuf) UpdateMetrics(mutex *sync.Mutex) error {
 
 	mutex.Lock()
 
-	buf.Metrics["Alloc"].update(statStruct.Alloc)
-	buf.Metrics["BuckHashSys"].update(statStruct.BuckHashSys)
-	buf.Metrics["Frees"].update(statStruct.Frees)
-	buf.Metrics["GCCPUFraction"].update(statStruct.GCCPUFraction)
-	buf.Metrics["GCSys"].update(statStruct.GCSys)
-	buf.Metrics["HeapAlloc"].update(statStruct.HeapAlloc)
-	buf.Metrics["HeapIdle"].update(statStruct.HeapIdle)
-	buf.Metrics["HeapInuse"].update(statStruct.HeapInuse)
-	buf.Metrics["HeapObjects"].update(statStruct.HeapObjects)
-	buf.Metrics["HeapReleased"].update(statStruct.HeapReleased)
-	buf.Metrics["HeapSys"].update(statStruct.HeapSys)
-	buf.Metrics["LastGC"].update(statStruct.LastGC)
-	buf.Metrics["Lookups"].update(statStruct.Lookups)
-	buf.Metrics["MCacheInuse"].update(statStruct.MCacheInuse)
-	buf.Metrics["MCacheSys"].update(statStruct.MCacheSys)
-	buf.Metrics["MSpanInuse"].update(statStruct.MSpanInuse)
-	buf.Metrics["MSpanSys"].update(statStruct.MSpanSys)
-	buf.Metrics["Mallocs"].update(statStruct.Mallocs)
-	buf.Metrics["NextGC"].update(statStruct.NextGC)
-	buf.Metrics["NumForcedGC"].update(statStruct.NumForcedGC)
-	buf.Metrics["NumGC"].update(statStruct.NumGC)
-	buf.Metrics["OtherSys"].update(statStruct.OtherSys)
-	buf.Metrics["PauseTotalNs"].update(statStruct.PauseTotalNs)
-	buf.Metrics["StackInuse"].update(statStruct.StackInuse)
-	buf.Metrics["StackSys"].update(statStruct.StackSys)
-	buf.Metrics["Sys"].update(statStruct.Sys)
-	buf.Metrics["TotalAlloc"].update(statStruct.TotalAlloc)
+	buf.Metrics["Alloc"].updateGauge(statStruct.Alloc)
+	buf.Metrics["BuckHashSys"].updateGauge(statStruct.BuckHashSys)
+	buf.Metrics["Frees"].updateGauge(statStruct.Frees)
+	buf.Metrics["GCCPUFraction"].updateGauge(statStruct.GCCPUFraction)
+	buf.Metrics["GCSys"].updateGauge(statStruct.GCSys)
+	buf.Metrics["HeapAlloc"].updateGauge(statStruct.HeapAlloc)
+	buf.Metrics["HeapIdle"].updateGauge(statStruct.HeapIdle)
+	buf.Metrics["HeapInuse"].updateGauge(statStruct.HeapInuse)
+	buf.Metrics["HeapObjects"].updateGauge(statStruct.HeapObjects)
+	buf.Metrics["HeapReleased"].updateGauge(statStruct.HeapReleased)
+	buf.Metrics["HeapSys"].updateGauge(statStruct.HeapSys)
+	buf.Metrics["LastGC"].updateGauge(statStruct.LastGC)
+	buf.Metrics["Lookups"].updateGauge(statStruct.Lookups)
+	buf.Metrics["MCacheInuse"].updateGauge(statStruct.MCacheInuse)
+	buf.Metrics["MCacheSys"].updateGauge(statStruct.MCacheSys)
+	buf.Metrics["MSpanInuse"].updateGauge(statStruct.MSpanInuse)
+	buf.Metrics["MSpanSys"].updateGauge(statStruct.MSpanSys)
+	buf.Metrics["Mallocs"].updateGauge(statStruct.Mallocs)
+	buf.Metrics["NextGC"].updateGauge(statStruct.NextGC)
+	buf.Metrics["NumForcedGC"].updateGauge(statStruct.NumForcedGC)
+	buf.Metrics["NumGC"].updateGauge(statStruct.NumGC)
+	buf.Metrics["OtherSys"].updateGauge(statStruct.OtherSys)
+	buf.Metrics["PauseTotalNs"].updateGauge(statStruct.PauseTotalNs)
+	buf.Metrics["StackInuse"].updateGauge(statStruct.StackInuse)
+	buf.Metrics["StackSys"].updateGauge(statStruct.StackSys)
+	buf.Metrics["Sys"].updateGauge(statStruct.Sys)
+	buf.Metrics["TotalAlloc"].updateGauge(statStruct.TotalAlloc)
 
-	err := buf.Metrics["PollCount"].updateCounter()
-	if err != nil {
-		return err
-	}
+	buf.Metrics["PollCount"].updateCounter()
 
-	buf.Metrics["RandomValue"].update(rand.Float64())
+	buf.Metrics["RandomValue"].updateGauge(rand.Float64())
 
 	mutex.Unlock()
 
