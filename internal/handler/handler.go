@@ -30,6 +30,7 @@ func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger) *Repositori
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 	mdlWare := middleware.NewLoggerMiddleware(rh.Logger)
 	router.Use(mdlWare.RequestLogger)
+	router.Use(middleware.GZipMiddleware)
 	router.Route("/", func(r chi.Router) {
 
 		r.Get("/", rh.GetAllMetrics)
