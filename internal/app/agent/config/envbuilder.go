@@ -6,59 +6,59 @@ import (
 	"time"
 )
 
-func (ec *Config) ReadEnv() {
+func (c *Config) ReadEnv() {
 	addr := os.Getenv("ADDRESS")
 	pollInt := os.Getenv("POLL_INTERVAL")
 	reportInt := os.Getenv("REPORT_INTERVAL")
 	if addr != "" {
-		ec.addressEnv = &addr
+		c.addressEnv = &addr
 	}
 	if pollInt != "" {
-		ec.pollIntervalEnv = &pollInt
+		c.pollIntervalEnv = &pollInt
 	}
 	if reportInt != "" {
-		ec.reportIntervalEnv = &reportInt
+		c.reportIntervalEnv = &reportInt
 	}
 }
 
-func (ec *Config) SetEnvAddress() {
-	if ec.addressEnv != nil {
-		ec.Address = *ec.addressEnv
+func (c *Config) SetEnvAddress() {
+	if c.addressEnv != nil {
+		c.Address = *c.addressEnv
 	}
 }
 
-func (ec *Config) SetEnvPollInterval() error {
-	if ec.pollIntervalEnv != nil {
-		dur, err := time.ParseDuration(*ec.pollIntervalEnv + "s")
+func (c *Config) SetEnvPollInterval() error {
+	if c.pollIntervalEnv != nil {
+		dur, err := time.ParseDuration(*c.pollIntervalEnv + "s")
 		if err != nil {
 			return errors.New("can not parse poll_interval as duration" + err.Error())
 		}
-		ec.PollInterval = dur
+		c.PollInterval = dur
 	}
 	return nil
 }
-func (ec *Config) SetEnvReportInterval() error {
-	if ec.reportIntervalEnv != nil {
-		dur, err := time.ParseDuration(*ec.reportIntervalEnv + "s")
+func (c *Config) SetEnvReportInterval() error {
+	if c.reportIntervalEnv != nil {
+		dur, err := time.ParseDuration(*c.reportIntervalEnv + "s")
 		if err != nil {
 			return errors.New("can not parse report_interval as duration" + err.Error())
 		}
-		ec.ReportInterval = dur
+		c.ReportInterval = dur
 	}
 	return nil
 }
 
-func (ec *Config) BuildEnv() error {
-	ec.ReadEnv()
+func (c *Config) BuildEnv() error {
+	c.ReadEnv()
 
-	ec.SetEnvAddress()
+	c.SetEnvAddress()
 
-	err := ec.SetEnvPollInterval()
+	err := c.SetEnvPollInterval()
 	if err != nil {
 		return err
 	}
 
-	err = ec.SetEnvReportInterval()
+	err = c.SetEnvReportInterval()
 	if err != nil {
 		return err
 	}

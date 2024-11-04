@@ -24,12 +24,12 @@ func New() *Config {
 	}
 }
 
-func (fc *Config) Build() error {
-	err := fc.BuildFlags()
+func (c *Config) Build() error {
+	err := c.BuildFlags()
 	if err != nil {
 		return err
 	}
-	err = fc.BuildEnv()
+	err = c.BuildEnv()
 	if err != nil {
 		return err
 	}
