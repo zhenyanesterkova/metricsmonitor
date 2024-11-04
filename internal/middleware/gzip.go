@@ -29,7 +29,7 @@ func GZipMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		contentType := r.Header.Get("Content-Type")
+		contentType := r.Header.Get("Accept")
 		compressing := isCompression(contentType)
 
 		if supportsGzip && compressing {
