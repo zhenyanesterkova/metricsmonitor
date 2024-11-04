@@ -16,8 +16,8 @@ func main() {
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
-	cfgBuilder := config.GetConfigBuilder()
-	cfg, err := cfgBuilder.Build()
+	cfg := config.New()
+	err := cfg.Build()
 	if err != nil {
 		log.Fatalf("an error occurred while reading the config %v", err)
 	}
