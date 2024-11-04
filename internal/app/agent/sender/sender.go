@@ -2,6 +2,7 @@ package sender
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -30,8 +31,16 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 	upMetric := s.Report.MetricsBuf.Metrics[metricName]
 
 	var buff bytes.Buffer
-	enc := json.NewEncoder(&buff)
+
+	gzWriter := gzip.NewWriter(&buff)
+
+	enc := json.NewEncoder(gzWriter)
 	if err := enc.Encode(upMetric); err != nil {
+		return err
+	}
+
+	err := gzWriter.Close()
+	if err != nil {
 		return err
 	}
 
@@ -43,6 +52,7 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
