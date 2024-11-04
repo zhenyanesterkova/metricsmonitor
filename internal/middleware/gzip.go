@@ -35,6 +35,7 @@ func GZipMiddleware(next http.Handler) http.Handler {
 		if supportsGzip && compressing {
 			cw := mycompress.NewCompressWriter(w)
 			ow = cw
+			ow.Header().Set("Content-Encoding", "gzip")
 			defer cw.Close()
 		}
 
