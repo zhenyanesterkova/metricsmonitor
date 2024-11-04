@@ -6,57 +6,62 @@ import (
 	"time"
 )
 
-type envConfig struct {
-	address        string
-	pollInterval   time.Duration
-	reportInterval time.Duration
-}
-
-func newEnvConfig() *envConfig {
-	return &envConfig{}
-}
-
-func (ec *envConfig) SetAddress() {
-	ec.address = os.Getenv("ADDRESS")
-}
-
-func (ec *envConfig) SetPollInterval() error {
-
-	dur, err := time.ParseDuration(os.Getenv("POLL_INTERVAL") + "s")
-	if err != nil {
-		return errors.New("can not parse poll_interval as duration" + err.Error())
+func (ec *Config) ReadEnv() {
+	addr := os.Getenv("ADDRESS")
+	pollInt := os.Getenv("POLL_INTERVAL")
+	reportInt := os.Getenv("REPORT_INTERVAL")
+	if addr != "" {
+		ec.addressEnv = &addr
 	}
-	ec.pollInterval = dur
+	if pollInt != "" {
+		ec.pollIntervalEnv = &pollInt
+	}
+	if reportInt != "" {
+		ec.reportIntervalEnv = &reportInt
+	}
+}
 
+func (ec *Config) SetEnvAddress() {
+	if ec.addressEnv != nil {
+		ec.Address = *ec.addressEnv
+	}
+}
+
+func (ec *Config) SetEnvPollInterval() error {
+	if ec.pollIntervalEnv != nil {
+		dur, err := time.ParseDuration(*ec.pollIntervalEnv + "s")
+		if err != nil {
+			return errors.New("can not parse poll_interval as duration" + err.Error())
+		}
+		ec.PollInterval = dur
+	}
 	return nil
 }
-func (ec *envConfig) SetReportInterval() error {
-
-	dur, err := time.ParseDuration(os.Getenv("REPORT_INTERVAL") + "s")
-	if err != nil {
-		return errors.New("can not parse report_interval as duration" + err.Error())
+func (ec *Config) SetEnvReportInterval() error {
+	if ec.reportIntervalEnv != nil {
+		dur, err := time.ParseDuration(*ec.reportIntervalEnv + "s")
+		if err != nil {
+			return errors.New("can not parse report_interval as duration" + err.Error())
+		}
+		ec.ReportInterval = dur
 	}
-	ec.reportInterval = dur
-
 	return nil
 }
 
-func (ec *envConfig) Build() (Config, error) {
-	ec.SetAddress()
+func (ec *Config) BuildEnv() error {
+	ec.ReadEnv()
 
-	err := ec.SetPollInterval()
+	ec.SetEnvAddress()
+
+	err := ec.SetEnvPollInterval()
 	if err != nil {
-		return Config{}, err
+		return err
 	}
 
-	err = ec.SetReportInterval()
+	err = ec.SetEnvReportInterval()
 	if err != nil {
-		return Config{}, err
+		return err
 	}
 
-	return Config{
-		Address:        ec.address,
-		PollInterval:   ec.pollInterval,
-		ReportInterval: ec.reportInterval,
-	}, nil
+	return nil
 }
