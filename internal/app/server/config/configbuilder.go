@@ -3,7 +3,8 @@ package config
 type ConfigBuilder interface {
 	SetServerConfig()
 	SetLoggerConfig()
-	Build() Config
+	SetRestoreConfig() error
+	Build() (Config, error)
 }
 
 func GetConfigBuilder() ConfigBuilder {

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 
@@ -14,10 +16,14 @@ import (
 func main() {
 
 	cfgBuilder := config.GetConfigBuilder()
-	cfg := cfgBuilder.Build()
+	cfg, err := cfgBuilder.Build()
+	if err != nil {
+		fmt.Printf("can not build config: %v", err)
+		os.Exit(1)
+	}
 
 	logger := logger.NewLogrusLogger()
-	err := logger.SetLevelForLog(cfg.LConfig.Level)
+	err = logger.SetLevelForLog(cfg.LConfig.Level)
 	if err != nil {
 		logger.LogrusLog.Errorf("can not parse log level: %v", err)
 	}
