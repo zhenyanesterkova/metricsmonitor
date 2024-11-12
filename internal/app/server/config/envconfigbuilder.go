@@ -11,15 +11,15 @@ import (
 type envConfig struct {
 	sConfig     ServerConfig
 	lConfig     LoggerConfig
-	rConfig     RestoreConfig
 	flagsValues flags
+	rConfig     RestoreConfig
 }
 
 type flags struct {
 	address         string
 	logLevel        string
-	storeInt        int
 	fileStoragePath string
+	storeInt        int
 	restore         bool
 }
 
@@ -37,7 +37,6 @@ func (ec *envConfig) setFlagsVariables() {
 }
 
 func (ec *envConfig) SetServerConfig() {
-
 	envEndpoint := os.Getenv("ADDRESS")
 
 	if envEndpoint != "" {
@@ -49,7 +48,6 @@ func (ec *envConfig) SetServerConfig() {
 }
 
 func (ec *envConfig) SetLoggerConfig() {
-
 	envLogLevel := os.Getenv("LOG_LEVEL")
 
 	if envLogLevel != "" {
@@ -61,7 +59,6 @@ func (ec *envConfig) SetLoggerConfig() {
 }
 
 func (ec *envConfig) SetRestoreConfig() error {
-
 	envStoreInt := os.Getenv("STORE_INTERVAL")
 
 	var strDur string

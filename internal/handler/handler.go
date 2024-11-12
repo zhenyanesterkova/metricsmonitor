@@ -24,15 +24,13 @@ func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger) *Repositori
 		Repo:   rep,
 		Logger: log,
 	}
-
 }
 
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
-	mdlWare := middleware.NewLoggerMiddleware(rh.Logger)
+	mdlWare := middleware.NewMiddlewareStruct(rh.Logger)
 	router.Use(mdlWare.RequestLogger)
-	router.Use(middleware.GZipMiddleware)
+	router.Use(mdlWare.GZipMiddleware)
 	router.Route("/", func(r chi.Router) {
-
 		r.Get("/", rh.GetAllMetrics)
 		r.Route("/value/", func(r chi.Router) {
 			r.Post("/", rh.GetMetricValueJSON)
@@ -43,6 +41,5 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 			r.Post("/", rh.UpdateMetricJSON)
 			r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
 		})
-
 	})
 }

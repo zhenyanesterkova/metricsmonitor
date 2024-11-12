@@ -11,8 +11,9 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/statistic"
 )
 
-func main() {
+const goroutinesCount = 2
 
+func main() {
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
@@ -29,7 +30,7 @@ func main() {
 		WGroup:       &wg,
 		MetricsBuf:   metrics,
 	}
-	sender := sender.Sender{
+	senderStat := sender.Sender{
 		Client:         &http.Client{},
 		Endpoint:       cfg.Address,
 		ReportInterval: cfg.ReportInterval,
@@ -40,12 +41,11 @@ func main() {
 		},
 	}
 
-	wg.Add(2)
+	wg.Add(goroutinesCount)
 
 	go stats.UpdateStatistic()
 
-	go sender.SendReport()
+	go senderStat.SendReport()
 
 	wg.Wait()
-
 }

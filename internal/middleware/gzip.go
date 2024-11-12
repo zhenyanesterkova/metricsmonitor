@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/mycompress"
 )
 
@@ -16,8 +18,9 @@ func isCompression(cType string) bool {
 	return false
 }
 
-func GZipMiddleware(next http.Handler) http.Handler {
+func (lm MiddlewareStruct) GZipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := lm.Logger.LogrusLog
 		ow := w
 
 		supportsGzip := false
@@ -36,7 +39,14 @@ func GZipMiddleware(next http.Handler) http.Handler {
 			cw := mycompress.NewCompressWriter(w)
 			ow = cw
 			ow.Header().Set("Content-Encoding", "gzip")
-			defer cw.Close()
+			defer func() {
+				err := cw.Close()
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"error": err,
+					}).Error("middleware: GZipMiddleware error ")
+				}
+			}()
 		}
 
 		contentEncoding := r.Header.Get("Content-Encoding")
@@ -48,7 +58,14 @@ func GZipMiddleware(next http.Handler) http.Handler {
 				return
 			}
 			r.Body = cr
-			defer cr.Close()
+			defer func() {
+				err := cr.Close()
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"error": err,
+					}).Error("middleware: GZipMiddleware error ")
+				}
+			}()
 		}
 
 		next.ServeHTTP(ow, r)

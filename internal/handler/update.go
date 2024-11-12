@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -11,7 +12,6 @@ import (
 )
 
 func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
-
 	metricType := chi.URLParam(r, "typeMetric")
 	metricName := chi.URLParam(r, "nameMetric")
 	metricValue := chi.URLParam(r, "valueMetric")
@@ -37,17 +37,16 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 
 	_, err := rh.Repo.UpdateMetric(metrica)
 	if err != nil {
-		switch err {
-		case metric.ErrInvalidName:
+		switch {
+		case errors.Is(err, metric.ErrInvalidName):
 			w.WriteHeader(http.StatusNotFound)
-
-		case metric.ErrParseValue, metric.ErrUnknownType, metric.ErrInvalidType:
+		case errors.Is(err, metric.ErrParseValue) ||
+			errors.Is(err, metric.ErrUnknownType) ||
+			errors.Is(err, metric.ErrInvalidType):
 			w.WriteHeader(http.StatusBadRequest)
-
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
-
 		}
 		return
 	}
@@ -56,7 +55,6 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 }
 
 func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
-
 	newMetric := metric.New("")
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&newMetric); err != nil {
@@ -67,18 +65,19 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 
 	updating, err := rh.Repo.UpdateMetric(newMetric)
 	if err != nil {
-		switch err {
-		case metric.ErrInvalidName:
+		switch {
+		case errors.Is(err, metric.ErrInvalidName):
 			w.WriteHeader(http.StatusNotFound)
-
-		case metric.ErrParseValue, metric.ErrUnknownType, metric.ErrInvalidType:
+		case errors.Is(err, metric.ErrParseValue) ||
+			errors.Is(err, metric.ErrUnknownType) ||
+			errors.Is(err, metric.ErrInvalidType):
 			w.WriteHeader(http.StatusBadRequest)
-
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
-
 		}
+
+		_, _ = w.Write([]byte(err.Error()))
+
 		return
 	}
 

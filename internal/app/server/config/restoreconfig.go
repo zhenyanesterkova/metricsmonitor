@@ -9,7 +9,7 @@ const (
 )
 
 type RestoreConfig struct {
-	StoreInterval   time.Duration
 	FileStoragePath string
 	Restore         bool
+	StoreInterval   time.Duration
 }

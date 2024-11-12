@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,18 +21,19 @@ import (
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
-	req, err := http.NewRequest(method, ts.URL+path, nil)
+	t.Helper()
+	req, err := http.NewRequest(method, ts.URL+path, http.NoBody)
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	err = resp.Body.Close()
+	require.NoError(t, err)
 
 	respBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	return resp, string(respBody)
-
 }
 
 func CreateTestMemStorage() (storage *memstorage.MemStorage) {
@@ -56,17 +58,16 @@ func getExpectedHTML(templateName, nameData string, data interface{}) (string, e
 
 	tmpl, err := template.ParseFS(web.Templates, "template/"+templateName)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("main_test.go func getExpectedHTML(): error parse FS - %w", err)
 	}
 	err = tmpl.ExecuteTemplate(buf, nameData, data)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("main_test.go func getExpectedHTML(): error in Execute Template - %w", err)
 	}
 	return buf.String(), nil
 }
 
 func TestRouter(t *testing.T) {
-
 	respHTML, _ := getExpectedHTML("allMetricsView.html", "metrics", [][2]string{
 		{"testCounter", "1"},
 		{"testGauge", "2.5"},
@@ -74,13 +75,13 @@ func TestRouter(t *testing.T) {
 
 	memStorage := CreateTestMemStorage()
 
-	logger := logger.NewLogrusLogger()
-	err := logger.SetLevelForLog("debug")
+	loggerInst := logger.NewLogrusLogger()
+	err := loggerInst.SetLevelForLog("debug")
 	require.NoError(t, err)
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, logger)
+	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)
@@ -105,28 +106,28 @@ func TestRouter(t *testing.T) {
 			status:       http.StatusOK,
 		},
 		{
-			name:         "test #2: method GET /value/counter/test (unknown metric name)",
+			name:         "test #2: GET /value/counter/test",
 			method:       http.MethodGet,
 			url:          "/value/counter/test",
 			wantRespBody: "",
 			status:       http.StatusNotFound,
 		},
 		{
-			name:         "test #3: method GET /value/counter/testCounter (correct metric name, type)",
+			name:         "test #3: GET /value/counter/testCounter",
 			method:       http.MethodGet,
 			url:          "/value/counter/testCounter",
 			wantRespBody: "1",
 			status:       http.StatusOK,
 		},
 		{
-			name:         "test #4: method GET /value/gauge/testCounter (correct metric name, incorrect metric type)",
+			name:         "test #4: GET /value/gauge/testCounter",
 			method:       http.MethodGet,
 			url:          "/value/gauge/testCounter",
 			wantRespBody: "",
 			status:       http.StatusNotFound,
 		},
 		{
-			name:                          "test #5: method POST /update/counter/testCounter/1 (correct metric name, value, type; existing metric; counter)",
+			name:                          "test #5: POST /update/counter/testCounter/1",
 			method:                        http.MethodPost,
 			url:                           "/update/counter/testCounter/1",
 			wantRespBody:                  "",
@@ -135,7 +136,7 @@ func TestRouter(t *testing.T) {
 			status:                        http.StatusOK,
 		},
 		{
-			name:                          "test #6: method POST /update/counter/testCounter/ttt (correct metric name, type; incorrect value; existing metric; counter)",
+			name:                          "test #6: POST /update/counter/testCounter/ttt",
 			method:                        http.MethodPost,
 			url:                           "/update/counter/testCounter/ttt",
 			wantRespBody:                  "",
@@ -144,7 +145,7 @@ func TestRouter(t *testing.T) {
 			status:                        http.StatusBadRequest,
 		},
 		{
-			name:                          "test #7: method POST /update/gauge/testCounter/1 (correct metric name, value; incorrect type; existing metric; counter)",
+			name:                          "test #7: POST /update/gauge/testCounter/1",
 			method:                        http.MethodPost,
 			url:                           "/update/gauge/testCounter/1",
 			wantRespBody:                  "",
@@ -153,7 +154,7 @@ func TestRouter(t *testing.T) {
 			status:                        http.StatusBadRequest,
 		},
 		{
-			name:                          "test #8: method POST /update/counter/testCounterNew/1 (correct metric name, value, type; not existing metric; counter)",
+			name:                          "test #8: POST /update/counter/testCounterNew/1",
 			method:                        http.MethodPost,
 			url:                           "/update/counter/testCounterNew/1",
 			wantRespBody:                  "",
@@ -162,7 +163,7 @@ func TestRouter(t *testing.T) {
 			status:                        http.StatusOK,
 		},
 		{
-			name:                        "test #9: method POST /update/gauge/testGauge/1.5 (correct metric name, value, type; existing metric; gauge)",
+			name:                        "test #9: POST /update/gauge/testGauge/1.5",
 			method:                      http.MethodPost,
 			url:                         "/update/gauge/testGauge/1.5",
 			wantRespBody:                "",
@@ -171,7 +172,7 @@ func TestRouter(t *testing.T) {
 			status:                      http.StatusOK,
 		},
 		{
-			name:                        "test #10: method POST /update/gauge/testGauge/ttt (correct metric name, type; incorrect value; existing metric; gauge)",
+			name:                        "test #10: POST /update/gauge/testGauge/ttt",
 			method:                      http.MethodPost,
 			url:                         "/update/gauge/testGauge/ttt",
 			wantRespBody:                "",
@@ -180,7 +181,7 @@ func TestRouter(t *testing.T) {
 			status:                      http.StatusBadRequest,
 		},
 		{
-			name:                        "test #11: method POST /update/counter/testGauge/1 (correct metric name, value; incorrect type; existing metric; gauge)",
+			name:                        "test #11: POST /update/counter/testGauge/1",
 			method:                      http.MethodPost,
 			url:                         "/update/counter/testGauge/1",
 			wantRespBody:                "",
@@ -189,7 +190,7 @@ func TestRouter(t *testing.T) {
 			status:                      http.StatusBadRequest,
 		},
 		{
-			name:                        "test #12: method POST /update/gauge/testGaugeNew/3.6 (correct metric name, value, type; not existing metric; gauge)",
+			name:                        "test #12: POST /update/gauge/testGaugeNew/3.6",
 			method:                      http.MethodPost,
 			url:                         "/update/gauge/testGaugeNew/3.6",
 			wantRespBody:                "",
@@ -198,28 +199,28 @@ func TestRouter(t *testing.T) {
 			status:                      http.StatusOK,
 		},
 		{
-			name:         "test #13: method GET /value/gauge/test (unknown metric name)",
+			name:         "test #13: GET /value/gauge/test",
 			method:       http.MethodGet,
 			url:          "/value/gauge/test",
 			wantRespBody: "",
 			status:       http.StatusNotFound,
 		},
 		{
-			name:         "test #14: method GET /value/gauge/testGauge (correct metric name, type)",
+			name:         "test #14: GET /value/gauge/testGauge",
 			method:       http.MethodGet,
 			url:          "/value/gauge/testGauge",
 			wantRespBody: "1.5",
 			status:       http.StatusOK,
 		},
 		{
-			name:         "test #15: method GET /update/gauge/testGaugeNew/3 (correct metric name, type, value; incorrect method)",
+			name:         "test #15: GET /update/gauge/testGaugeNew/3",
 			method:       http.MethodGet,
 			url:          "/update/gauge/testGaugeNew/3.6",
 			wantRespBody: "",
 			status:       http.StatusMethodNotAllowed,
 		},
 		{
-			name:         "test #16: method POST /value/gauge/testGaugeNew (correct metric name, type, value; incorrect method)",
+			name:         "test #16: POST /value/gauge/testGaugeNew",
 			method:       http.MethodPost,
 			url:          "/value/gauge/testGaugeNew",
 			wantRespBody: "",
@@ -229,7 +230,8 @@ func TestRouter(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp, respBody := testRequest(t, ts, test.method, test.url)
-			defer resp.Body.Close()
+			err := resp.Body.Close()
+			require.NoError(t, err)
 
 			assert.Equal(t, test.status, resp.StatusCode)
 			assert.Equal(t, test.wantRespBody, respBody)

@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,7 +19,7 @@ func NewLogrusLogger() LogrusLogger {
 func (llog LogrusLogger) SetLevelForLog(level string) error {
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
-		return err
+		return fmt.Errorf("logruslogger.go func SetLevelForLog(): error parse log level - %w", err)
 	}
 
 	llog.LogrusLog.SetLevel(lvl)

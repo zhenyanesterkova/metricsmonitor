@@ -4,23 +4,29 @@ import (
 	"time"
 )
 
+const (
+	defaultAddress   = "localhost:8080"
+	defaultPollInt   = 2
+	defaultReportInt = 10
+)
+
 type Config struct {
-	Address           string
-	PollInterval      time.Duration
-	ReportInterval    time.Duration
-	addressFl         *string
 	pollIntervalFl    *int
 	reportIntervalFl  *int
 	addressEnv        *string
 	pollIntervalEnv   *string
 	reportIntervalEnv *string
+	addressFl         *string
+	Address           string
+	PollInterval      time.Duration
+	ReportInterval    time.Duration
 }
 
 func New() *Config {
 	return &Config{
-		Address:        "localhost:8080",
-		PollInterval:   2 * time.Second,
-		ReportInterval: 10 * time.Second,
+		Address:        defaultAddress,
+		PollInterval:   defaultPollInt * time.Second,
+		ReportInterval: defaultReportInt * time.Second,
 	}
 }
 

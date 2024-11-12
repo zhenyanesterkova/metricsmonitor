@@ -1,12 +1,11 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 )
 
 type responseData struct {
@@ -22,7 +21,7 @@ type loggingResponseWriter struct {
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size
-	return size, err
+	return size, fmt.Errorf("logger.go Write() - %w", err)
 }
 
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
@@ -30,19 +29,8 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-type LoggerMiddleware struct {
-	Logger logger.LogrusLogger
-}
-
-func NewLoggerMiddleware(log logger.LogrusLogger) LoggerMiddleware {
-	return LoggerMiddleware{
-		Logger: log,
-	}
-}
-
-func (lm LoggerMiddleware) RequestLogger(next http.Handler) http.Handler {
+func (lm MiddlewareStruct) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		log := lm.Logger.LogrusLog
 
 		start := time.Now()

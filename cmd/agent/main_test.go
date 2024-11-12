@@ -13,15 +13,14 @@ import (
 var metricsTest = metric.NewMetricBuf()
 
 func Test_updateMetrics(t *testing.T) {
-
 	type args struct {
 		metrics    metric.MetricBuf
 		statStruct *runtime.MemStats
 		mutex      *sync.Mutex
 	}
 	tests := []struct {
-		name    string
 		args    args
+		name    string
 		wantErr bool
 	}{
 		{

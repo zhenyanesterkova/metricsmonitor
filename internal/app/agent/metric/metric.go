@@ -4,14 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 type Metric struct {
-	ID    string   `json:"id"`
-	MType string   `json:"type"`
+	val   any      `json:"-"`
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
-	val   any      `json:"-"`
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
 }
 
 func (m *Metric) StringValue() string {
@@ -21,7 +22,7 @@ func (m *Metric) StringValue() string {
 	if m.Delta == nil {
 		return fmt.Sprint(*(m.Value))
 	}
-	return fmt.Sprint(*(m.Delta))
+	return strconv.FormatInt(*(m.Delta), 10)
 }
 
 func (m *Metric) updateGauge(val any) {
@@ -29,7 +30,6 @@ func (m *Metric) updateGauge(val any) {
 }
 
 func (m *Metric) setGaugeValue() error {
-
 	if m.Value == nil {
 		temp := float64(0)
 		m.Value = &temp
@@ -63,5 +63,5 @@ func (m *Metric) updateCounter() {
 		temp := int64(0)
 		m.Delta = &temp
 	}
-	*(m.Delta) = *(m.Delta) + 1
+	*(m.Delta)++
 }

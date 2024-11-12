@@ -151,7 +151,6 @@ func (buf *MetricBuf) SetGaugeValuesInMetrics() error {
 }
 
 func (buf *MetricBuf) UpdateMetrics(mutex *sync.Mutex) error {
-
 	statStruct := &runtime.MemStats{}
 	runtime.ReadMemStats(statStruct)
 

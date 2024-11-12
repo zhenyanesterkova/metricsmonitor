@@ -6,10 +6,10 @@ const (
 )
 
 type Metric struct {
-	ID    string `json:"id"`
-	MType string `json:"type"`
 	MetricGauge
 	MetricCounter
+	ID    string `json:"id"`
+	MType string `json:"type"`
 }
 
 func (m *Metric) GetType() string {

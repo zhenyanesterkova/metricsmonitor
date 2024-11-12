@@ -2,8 +2,13 @@ package mycompress
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
+)
+
+const (
+	successfulMaxCode = 300
 )
 
 type CompressWriter struct {
@@ -23,18 +28,19 @@ func (c *CompressWriter) Header() http.Header {
 }
 
 func (c *CompressWriter) Write(p []byte) (int, error) {
-	return c.ZW.Write(p)
+	n, err := c.ZW.Write(p)
+	return n, fmt.Errorf("gzip.go func Write(): error write - %w", err)
 }
 
 func (c *CompressWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
+	if statusCode < successfulMaxCode {
 		c.W.Header().Set("Content-Encoding", "gzip")
 	}
 	c.W.WriteHeader(statusCode)
 }
 
 func (c *CompressWriter) Close() error {
-	return c.ZW.Close()
+	return fmt.Errorf("gzip.go func Close(): error close - %w", c.ZW.Close())
 }
 
 type CompressReader struct {
@@ -45,7 +51,7 @@ type CompressReader struct {
 func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gzip.go func NewCompressReader(): error create reader - %w", err)
 	}
 
 	return &CompressReader{
@@ -55,12 +61,13 @@ func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 }
 
 func (c CompressReader) Read(p []byte) (n int, err error) {
-	return c.ZR.Read(p)
+	n, err = c.ZR.Read(p)
+	return n, fmt.Errorf("gzip.go func Read(): error read - %w", err)
 }
 
 func (c *CompressReader) Close() error {
 	if err := c.R.Close(); err != nil {
-		return err
+		return fmt.Errorf("gzip.go func Close(): %w", err)
 	}
-	return c.ZR.Close()
+	return fmt.Errorf("gzip.go func Close(): %w", c.ZR.Close())
 }

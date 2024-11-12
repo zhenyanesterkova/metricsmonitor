@@ -37,7 +37,6 @@ func (s *MemStorage) GetMetricValue(name, typeMetric string) (metric.Metric, err
 }
 
 func (s *MemStorage) UpdateMetric(newMetric metric.Metric) (metric.Metric, error) {
-
 	if newMetric.ID == "" {
 		return metric.Metric{}, metric.ErrInvalidName
 	}
@@ -67,4 +66,12 @@ func (s *MemStorage) UpdateMetric(newMetric metric.Metric) (metric.Metric, error
 	s.metrics[newMetric.ID] = curMetric
 
 	return curMetric, nil
+}
+
+func (s *MemStorage) CreateMemento() *Memento {
+	return &Memento{metrics: s.metrics}
+}
+
+func (s *MemStorage) RestoreMemento(m *Memento) {
+	s.metrics = m.GetSavedState()
 }
