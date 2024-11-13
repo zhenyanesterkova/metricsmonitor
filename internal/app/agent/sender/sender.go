@@ -87,6 +87,7 @@ func (s Sender) SendReport() {
 				log.Printf("an error occurred while sending the report to the server %v", err)
 			}
 		}
+		s.Report.MetricsBuf.ResetCountersValues()
 		s.Report.Mutex.Unlock()
 	}
 }

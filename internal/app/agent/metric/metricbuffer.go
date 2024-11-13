@@ -192,3 +192,11 @@ func (buf *MetricBuf) UpdateMetrics(mutex *sync.Mutex) error {
 
 	return nil
 }
+
+func (buf *MetricBuf) ResetCountersValues() {
+	for _, metrica := range buf.Metrics {
+		if metrica.MType == CounterType {
+			*metrica.Delta = 0
+		}
+	}
+}
