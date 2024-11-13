@@ -27,10 +27,11 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-	err = resp.Body.Close()
-	require.NoError(t, err)
 
 	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	err = resp.Body.Close()
 	require.NoError(t, err)
 
 	return resp, string(respBody)
@@ -230,8 +231,6 @@ func TestRouter(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp, respBody := testRequest(t, ts, test.method, test.url)
-			err := resp.Body.Close()
-			require.NoError(t, err)
 
 			assert.Equal(t, test.status, resp.StatusCode)
 			assert.Equal(t, test.wantRespBody, respBody)
@@ -246,6 +245,8 @@ func TestRouter(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, test.wantStorageGaugeMetricValue, *actualValue.Value)
 			}
+			err := resp.Body.Close()
+			require.NoError(t, err)
 		})
 	}
 }

@@ -21,7 +21,10 @@ type loggingResponseWriter struct {
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size
-	return size, fmt.Errorf("logger.go Write() - %w", err)
+	if err != nil {
+		return size, fmt.Errorf("logger.go Write() - %w", err)
+	}
+	return size, nil
 }
 
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {

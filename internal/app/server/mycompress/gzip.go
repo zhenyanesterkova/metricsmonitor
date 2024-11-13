@@ -29,7 +29,10 @@ func (c *CompressWriter) Header() http.Header {
 
 func (c *CompressWriter) Write(p []byte) (int, error) {
 	n, err := c.ZW.Write(p)
-	return n, fmt.Errorf("gzip.go func Write(): error write - %w", err)
+	if err != nil {
+		return n, fmt.Errorf("gzip.go func Write(): error write - %w", err)
+	}
+	return n, nil
 }
 
 func (c *CompressWriter) WriteHeader(statusCode int) {
@@ -40,7 +43,11 @@ func (c *CompressWriter) WriteHeader(statusCode int) {
 }
 
 func (c *CompressWriter) Close() error {
-	return fmt.Errorf("gzip.go func Close(): error close - %w", c.ZW.Close())
+	err := c.ZW.Close()
+	if err != nil {
+		return fmt.Errorf("gzip.go func Close(): error close - %w", err)
+	}
+	return nil
 }
 
 type CompressReader struct {
@@ -62,12 +69,18 @@ func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 
 func (c CompressReader) Read(p []byte) (n int, err error) {
 	n, err = c.ZR.Read(p)
-	return n, fmt.Errorf("gzip.go func Read(): error read - %w", err)
+	if err != nil {
+		return n, fmt.Errorf("gzip.go func Read(): error read - %w", err)
+	}
+	return n, nil
 }
 
 func (c *CompressReader) Close() error {
 	if err := c.R.Close(); err != nil {
 		return fmt.Errorf("gzip.go func Close(): %w", err)
 	}
-	return fmt.Errorf("gzip.go func Close(): %w", c.ZR.Close())
+	if err := c.ZR.Close(); err != nil {
+		return fmt.Errorf("gzip.go func Close(): %w", err)
+	}
+	return nil
 }
