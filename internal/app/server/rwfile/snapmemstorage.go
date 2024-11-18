@@ -22,9 +22,19 @@ func (c *FileWriter) WriteSnapStorage(memento memstorage.Memento) error {
 }
 
 func (c *FileReader) ReadSnapStorage(memento *memstorage.Memento) error {
-	err := c.decoder.Decode(memento)
+	if !c.reader.Scan() {
+		if c.reader.Err() != nil {
+			return fmt.Errorf("error scan storage memento: %w", c.reader.Err())
+		}
+		return nil
+	}
+
+	data := c.reader.Bytes()
+
+	err := json.Unmarshal(data, &memento)
 	if err != nil {
 		return fmt.Errorf("rwfile: func ReadSnapStorage() - %w", err)
 	}
+
 	return nil
 }

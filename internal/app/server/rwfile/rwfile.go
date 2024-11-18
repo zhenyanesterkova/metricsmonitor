@@ -2,7 +2,6 @@ package rwfile
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -37,8 +36,8 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 }
 
 type FileReader struct {
-	file    *os.File
-	decoder *json.Decoder
+	file   *os.File
+	reader *bufio.Scanner
 }
 
 func NewFileReader(filename string) (*FileReader, error) {
@@ -48,8 +47,8 @@ func NewFileReader(filename string) (*FileReader, error) {
 	}
 
 	return &FileReader{
-		file:    file,
-		decoder: json.NewDecoder(file),
+		file:   file,
+		reader: bufio.NewScanner(file),
 	}, nil
 }
 
