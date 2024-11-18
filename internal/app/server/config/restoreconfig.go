@@ -1,6 +1,8 @@
 package config
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	DefaultStoreInterval   = 300
@@ -9,7 +11,10 @@ const (
 )
 
 type RestoreConfig struct {
-	FileStoragePath string
-	Restore         bool
-	StoreInterval   time.Duration
+	filePathParam        *string
+	restoreParam         *bool
+	storeIntervalParamFl *int
+	FileStoragePath      string
+	StoreInterval        time.Duration
+	Restore              bool
 }

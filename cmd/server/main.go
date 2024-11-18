@@ -25,8 +25,8 @@ func main() {
 }
 
 func run() error {
-	cfgBuilder := config.GetConfigBuilder()
-	cfg, err := cfgBuilder.Build()
+	cfg := config.New()
+	err := cfg.Build()
 	if err != nil {
 		fmt.Printf("can not build config: %v", err)
 		return fmt.Errorf("config error: %w", err)

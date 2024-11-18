@@ -2,118 +2,64 @@ package config
 
 import (
 	"errors"
-	"flag"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
 )
 
-type envConfig struct {
-	sConfig     ServerConfig
-	lConfig     LoggerConfig
-	flagsValues flags
-	rConfig     RestoreConfig
-}
-
-type flags struct {
-	address         string
-	logLevel        string
-	fileStoragePath string
-	storeInt        int
-	restore         bool
-}
-
-func newEnvConfig() *envConfig {
-	return &envConfig{}
-}
-
-func (ec *envConfig) setFlagsVariables() {
-	flag.StringVar(&ec.flagsValues.address, "a", DefaultServerAddress, "address and port to run server")
-	flag.StringVar(&ec.flagsValues.logLevel, "l", DefaultLogLevel, "log level")
-	flag.IntVar(&ec.flagsValues.storeInt, "i", DefaultStoreInterval, "store interval")
-	flag.StringVar(&ec.flagsValues.fileStoragePath, "f", DefaultFileStoragePath, "file storage path")
-	flag.BoolVar(&ec.flagsValues.restore, "r", DefaultRestore, "need restore")
-	flag.Parse()
-}
-
-func (ec *envConfig) SetServerConfig() {
+func (c *Config) setEnvServerConfig() {
 	envEndpoint := os.Getenv("ADDRESS")
 
 	if envEndpoint != "" {
-		ec.sConfig.Address = envEndpoint
-		return
+		c.SConfig.Address = envEndpoint
 	}
-
-	ec.sConfig.Address = ec.flagsValues.address
 }
 
-func (ec *envConfig) SetLoggerConfig() {
+func (c *Config) setEnvLoggerConfig() {
 	envLogLevel := os.Getenv("LOG_LEVEL")
 
 	if envLogLevel != "" {
-		ec.lConfig.Level = envLogLevel
-		return
+		c.LConfig.Level = envLogLevel
 	}
-
-	ec.lConfig.Level = ec.flagsValues.logLevel
 }
 
-func (ec *envConfig) SetRestoreConfig() error {
+func (c *Config) setEnvRestoreConfig() error {
 	envStoreInt := os.Getenv("STORE_INTERVAL")
 
-	var strDur string
 	if envStoreInt != "" {
-		strDur = envStoreInt + "s"
-	} else {
-		strDur = strconv.Itoa(ec.flagsValues.storeInt) + "s"
+		dur, err := time.ParseDuration(envStoreInt + "s")
+		if err != nil {
+			return errors.New("can not parse store interval as duration" + err.Error())
+		}
+		c.RConfig.StoreInterval = dur
 	}
-	dur, err := time.ParseDuration(strDur)
-	if err != nil {
-		return errors.New("can not parse store interval as duration" + err.Error())
-	}
-	ec.rConfig.StoreInterval = dur
 
 	envFileStoragePath := os.Getenv("FILE_STORAGE_PATH")
 
 	if envFileStoragePath != "" {
-		ec.rConfig.FileStoragePath = envFileStoragePath
-	} else {
-		ec.rConfig.FileStoragePath = ec.flagsValues.fileStoragePath
+		c.RConfig.FileStoragePath = envFileStoragePath
 	}
 
 	envRestore := os.Getenv("RESTORE")
 
 	if envRestore != "" {
-		ec.rConfig.Restore, err = strconv.ParseBool(envRestore)
+		path, err := strconv.ParseBool(envRestore)
 		if err != nil {
 			return errors.New("can not parse need store" + err.Error())
 		}
-	} else {
-		ec.rConfig.Restore = ec.flagsValues.restore
+		c.RConfig.Restore = path
 	}
 
 	return nil
 }
 
-func (ec *envConfig) Build() (Config, error) {
-	ec.setFlagsVariables()
-	ec.SetServerConfig()
-	ec.SetLoggerConfig()
-	err := ec.SetRestoreConfig()
+func (c *Config) envBuild() error {
+	c.setEnvServerConfig()
+	c.setEnvLoggerConfig()
+	err := c.setEnvRestoreConfig()
 	if err != nil {
-		return Config{}, err
+		return fmt.Errorf("build env config error: %w", err)
 	}
-	return Config{
-		SConfig: ServerConfig{
-			Address: ec.sConfig.Address,
-		},
-		LConfig: LoggerConfig{
-			Level: ec.lConfig.Level,
-		},
-		RConfig: RestoreConfig{
-			StoreInterval:   ec.rConfig.StoreInterval,
-			FileStoragePath: ec.rConfig.FileStoragePath,
-			Restore:         ec.rConfig.Restore,
-		},
-	}, nil
+	return nil
 }
