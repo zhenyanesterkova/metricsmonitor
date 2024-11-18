@@ -4,7 +4,7 @@ import "time"
 
 const (
 	DefaultStoreInterval   = 300
-	DefaultFileStoragePath = "/storage/store.txt"
+	DefaultFileStoragePath = "storage.txt"
 	DefaultRestore         = true
 )
 

@@ -3,9 +3,9 @@ package memstorage
 import "github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 
 type Memento struct {
-	metrics map[string]metric.Metric
+	Metrics map[string]metric.Metric `json:"metrics"`
 }
 
 func (m *Memento) GetSavedState() map[string]metric.Metric {
-	return m.metrics
+	return m.Metrics
 }

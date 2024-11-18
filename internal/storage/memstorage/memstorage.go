@@ -69,7 +69,7 @@ func (s *MemStorage) UpdateMetric(newMetric metric.Metric) (metric.Metric, error
 }
 
 func (s *MemStorage) CreateMemento() *Memento {
-	return &Memento{metrics: s.metrics}
+	return &Memento{Metrics: s.metrics}
 }
 
 func (s *MemStorage) RestoreMemento(m *Memento) {

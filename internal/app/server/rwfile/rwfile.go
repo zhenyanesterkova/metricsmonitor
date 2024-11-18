@@ -1,7 +1,8 @@
-package restorer
+package rwfile
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -37,7 +38,7 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 
 type FileReader struct {
 	file    *os.File
-	scanner *bufio.Scanner
+	decoder *json.Decoder
 }
 
 func NewFileReader(filename string) (*FileReader, error) {
@@ -48,7 +49,7 @@ func NewFileReader(filename string) (*FileReader, error) {
 
 	return &FileReader{
 		file:    file,
-		scanner: bufio.NewScanner(file),
+		decoder: json.NewDecoder(file),
 	}, nil
 }
 
