@@ -11,8 +11,6 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/statistic"
 )
 
-const goroutinesCount = 2
-
 func main() {
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
@@ -41,11 +39,11 @@ func main() {
 		},
 	}
 
-	wg.Add(goroutinesCount)
-
 	go stats.UpdateStatistic()
+	wg.Add(1)
 
 	go senderStat.SendReport()
+	wg.Add(1)
 
 	wg.Wait()
 }
