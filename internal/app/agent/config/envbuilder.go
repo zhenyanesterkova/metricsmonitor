@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (c *Config) ReadEnv() {
+func (c *Config) readEnv() {
 	addr := os.Getenv("ADDRESS")
 	pollInt := os.Getenv("POLL_INTERVAL")
 	reportInt := os.Getenv("REPORT_INTERVAL")
@@ -21,13 +21,13 @@ func (c *Config) ReadEnv() {
 	}
 }
 
-func (c *Config) SetEnvAddress() {
+func (c *Config) setEnvAddress() {
 	if c.addressEnv != nil {
 		c.Address = *c.addressEnv
 	}
 }
 
-func (c *Config) SetEnvPollInterval() error {
+func (c *Config) setEnvPollInterval() error {
 	if c.pollIntervalEnv != nil {
 		dur, err := time.ParseDuration(*c.pollIntervalEnv + "s")
 		if err != nil {
@@ -37,7 +37,7 @@ func (c *Config) SetEnvPollInterval() error {
 	}
 	return nil
 }
-func (c *Config) SetEnvReportInterval() error {
+func (c *Config) setEnvReportInterval() error {
 	if c.reportIntervalEnv != nil {
 		dur, err := time.ParseDuration(*c.reportIntervalEnv + "s")
 		if err != nil {
@@ -48,17 +48,17 @@ func (c *Config) SetEnvReportInterval() error {
 	return nil
 }
 
-func (c *Config) BuildEnv() error {
-	c.ReadEnv()
+func (c *Config) buildEnv() error {
+	c.readEnv()
 
-	c.SetEnvAddress()
+	c.setEnvAddress()
 
-	err := c.SetEnvPollInterval()
+	err := c.setEnvPollInterval()
 	if err != nil {
 		return err
 	}
 
-	err = c.SetEnvReportInterval()
+	err = c.setEnvReportInterval()
 	if err != nil {
 		return err
 	}

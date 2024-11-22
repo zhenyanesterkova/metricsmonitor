@@ -23,13 +23,13 @@ func (c *Config) readFlagReport() {
 	flag.IntVar(c.reportIntervalFl, "r", defaultReportInt, "the frequency of sending metrics to the server")
 }
 
-func (c *Config) SetFlagAddress() {
+func (c *Config) setFlagAddress() {
 	if c.addressFl != nil {
 		c.Address = *c.addressFl
 	}
 }
 
-func (c *Config) SetFlagPollInterval() error {
+func (c *Config) setFlagPollInterval() error {
 	if c.pollIntervalFl != nil {
 		dur, err := time.ParseDuration(strconv.Itoa(*c.pollIntervalFl) + "s")
 		if err != nil {
@@ -40,7 +40,7 @@ func (c *Config) SetFlagPollInterval() error {
 	return nil
 }
 
-func (c *Config) SetFlagReportInterval() error {
+func (c *Config) setFlagReportInterval() error {
 	if c.reportIntervalFl != nil {
 		dur, err := time.ParseDuration(strconv.Itoa(*c.reportIntervalFl) + "s")
 		if err != nil {
@@ -51,20 +51,20 @@ func (c *Config) SetFlagReportInterval() error {
 	return nil
 }
 
-func (c *Config) BuildFlags() error {
+func (c *Config) buildFlags() error {
 	c.readFlagAddress()
 	c.readFlagPoll()
 	c.readFlagReport()
 	flag.Parse()
 
-	c.SetFlagAddress()
+	c.setFlagAddress()
 
-	err := c.SetFlagPollInterval()
+	err := c.setFlagPollInterval()
 	if err != nil {
 		return err
 	}
 
-	err = c.SetFlagReportInterval()
+	err = c.setFlagReportInterval()
 	if err != nil {
 		return err
 	}

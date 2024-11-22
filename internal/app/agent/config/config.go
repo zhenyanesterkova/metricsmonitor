@@ -31,11 +31,11 @@ func New() *Config {
 }
 
 func (c *Config) Build() error {
-	err := c.BuildFlags()
+	err := c.buildFlags()
 	if err != nil {
 		return err
 	}
-	err = c.BuildEnv()
+	err = c.buildEnv()
 	if err != nil {
 		return err
 	}
