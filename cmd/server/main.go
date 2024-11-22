@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,8 +20,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Printf("%v", err)
-		os.Exit(1)
+		log.Fatalf("server error: %v", err)
 	}
 }
 
@@ -28,7 +28,7 @@ func run() error {
 	cfg := config.New()
 	err := cfg.Build()
 	if err != nil {
-		fmt.Printf("can not build config: %v", err)
+		log.Printf("can not build config: %v", err)
 		return fmt.Errorf("config error: %w", err)
 	}
 
@@ -36,6 +36,7 @@ func run() error {
 	err = loggerInst.SetLevelForLog(cfg.LConfig.Level)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("can not parse log level: %v", err)
+		return fmt.Errorf("parse log level error: %w", err)
 	}
 
 	storage := memstorage.New()
