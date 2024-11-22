@@ -23,7 +23,6 @@ type Sender struct {
 type ReportData struct {
 	MetricsBuf *metric.MetricBuf
 	WGroup     *sync.WaitGroup
-	Mutex      *sync.Mutex
 }
 
 func (s Sender) SendQueryUpdateMetric(metricName string) error {
@@ -76,18 +75,14 @@ func (s Sender) SendReport() {
 	defer s.Report.WGroup.Done()
 	ticker := time.NewTicker(s.ReportInterval)
 	for range ticker.C {
-		s.Report.Mutex.Lock()
-		err := s.Report.MetricsBuf.SetGaugeValuesInMetrics()
-		if err != nil {
-			log.Printf("an error occurred while preparing the data for sending to the server %v", err)
-		}
+		s.Report.MetricsBuf.Lock()
 		for name := range s.Report.MetricsBuf.Metrics {
 			err := s.SendQueryUpdateMetric(name)
 			if err != nil {
 				log.Printf("an error occurred while sending the report to the server %v", err)
 			}
 		}
+		s.Report.MetricsBuf.Unlock()
 		s.Report.MetricsBuf.ResetCountersValues()
-		s.Report.Mutex.Unlock()
 	}
 }

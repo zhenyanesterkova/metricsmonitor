@@ -1,14 +1,10 @@
 package metric
 
 import (
-	"errors"
-	"fmt"
-	"reflect"
 	"strconv"
 )
 
 type Metric struct {
-	val   any      `json:"-"`
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
 	ID    string   `json:"id"`
@@ -17,45 +13,17 @@ type Metric struct {
 
 func (m *Metric) StringValue() string {
 	if m.Delta == nil && m.Value == nil {
-		return fmt.Sprint(m.val)
+		return ""
 	}
 	if m.Delta == nil {
-		return fmt.Sprint(*(m.Value))
+		return strconv.FormatFloat(*(m.Value), 'f', 2, 64)
 	}
 	return strconv.FormatInt(*(m.Delta), 10)
 }
 
-func (m *Metric) updateGauge(val any) {
-	m.val = val
-}
-
-func (m *Metric) setGaugeValue() error {
-	if m.Value == nil {
-		temp := float64(0)
-		m.Value = &temp
-	}
-
-	refValue := reflect.ValueOf(m.val)
-	refGaugeValue := reflect.ValueOf(m.Value)
-	refGaugeValueElem := refGaugeValue.Elem()
-	refGaugeValueType := refGaugeValueElem.Type()
-
-	if refValue.Kind() == reflect.Ptr {
-		if refValue.IsNil() {
-			return errors.New("the gauge metric value has not been updated: value is zero pointer")
-		}
-		refValue = refValue.Elem()
-	}
-
-	canConvert := refValue.CanConvert(refGaugeValueType)
-	if !canConvert {
-		return errors.New("can not convert value to gauge; the gauge metric value has not been updated")
-	}
-
-	value := refValue.Convert(refGaugeValueType).Float()
-	*(m.Value) = value
-
-	return nil
+func (m *Metric) updateGauge(val float64) {
+	temp := val
+	m.Value = &temp
 }
 
 func (m *Metric) updateCounter() {

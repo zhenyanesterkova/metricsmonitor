@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
 	cfg := config.New()
@@ -24,7 +23,6 @@ func main() {
 	metrics := metric.NewMetricBuf()
 	stats := statistic.Statistic{
 		PollInterval: cfg.PollInterval,
-		Mutex:        &mutex,
 		WGroup:       &wg,
 		MetricsBuf:   metrics,
 	}
@@ -35,7 +33,6 @@ func main() {
 		Report: sender.ReportData{
 			MetricsBuf: metrics,
 			WGroup:     &wg,
-			Mutex:      &mutex,
 		},
 	}
 

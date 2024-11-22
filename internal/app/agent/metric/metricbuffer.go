@@ -13,6 +13,7 @@ const (
 
 type MetricBuf struct {
 	Metrics map[string]*Metric
+	mutex   sync.Mutex
 }
 
 func NewMetricBuf() *MetricBuf {
@@ -135,68 +136,65 @@ func NewMetricBuf() *MetricBuf {
 			MType: "gauge",
 		},
 	}
+	buffer.mutex = sync.Mutex{}
 	return buffer
 }
 
-func (buf *MetricBuf) SetGaugeValuesInMetrics() error {
-	for _, metric := range buf.Metrics {
-		if metric.MType == GaugeType {
-			err := metric.setGaugeValue()
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (buf *MetricBuf) UpdateMetrics(mutex *sync.Mutex) error {
+func (buf *MetricBuf) UpdateMetrics() {
 	statStruct := &runtime.MemStats{}
 	runtime.ReadMemStats(statStruct)
 
-	mutex.Lock()
+	buf.Lock()
 
-	buf.Metrics["Alloc"].updateGauge(statStruct.Alloc)
-	buf.Metrics["BuckHashSys"].updateGauge(statStruct.BuckHashSys)
-	buf.Metrics["Frees"].updateGauge(statStruct.Frees)
-	buf.Metrics["GCCPUFraction"].updateGauge(statStruct.GCCPUFraction)
-	buf.Metrics["GCSys"].updateGauge(statStruct.GCSys)
-	buf.Metrics["HeapAlloc"].updateGauge(statStruct.HeapAlloc)
-	buf.Metrics["HeapIdle"].updateGauge(statStruct.HeapIdle)
-	buf.Metrics["HeapInuse"].updateGauge(statStruct.HeapInuse)
-	buf.Metrics["HeapObjects"].updateGauge(statStruct.HeapObjects)
-	buf.Metrics["HeapReleased"].updateGauge(statStruct.HeapReleased)
-	buf.Metrics["HeapSys"].updateGauge(statStruct.HeapSys)
-	buf.Metrics["LastGC"].updateGauge(statStruct.LastGC)
-	buf.Metrics["Lookups"].updateGauge(statStruct.Lookups)
-	buf.Metrics["MCacheInuse"].updateGauge(statStruct.MCacheInuse)
-	buf.Metrics["MCacheSys"].updateGauge(statStruct.MCacheSys)
-	buf.Metrics["MSpanInuse"].updateGauge(statStruct.MSpanInuse)
-	buf.Metrics["MSpanSys"].updateGauge(statStruct.MSpanSys)
-	buf.Metrics["Mallocs"].updateGauge(statStruct.Mallocs)
-	buf.Metrics["NextGC"].updateGauge(statStruct.NextGC)
-	buf.Metrics["NumForcedGC"].updateGauge(statStruct.NumForcedGC)
-	buf.Metrics["NumGC"].updateGauge(statStruct.NumGC)
-	buf.Metrics["OtherSys"].updateGauge(statStruct.OtherSys)
-	buf.Metrics["PauseTotalNs"].updateGauge(statStruct.PauseTotalNs)
-	buf.Metrics["StackInuse"].updateGauge(statStruct.StackInuse)
-	buf.Metrics["StackSys"].updateGauge(statStruct.StackSys)
-	buf.Metrics["Sys"].updateGauge(statStruct.Sys)
-	buf.Metrics["TotalAlloc"].updateGauge(statStruct.TotalAlloc)
+	buf.Metrics["Alloc"].updateGauge(float64(statStruct.Alloc))
+	buf.Metrics["BuckHashSys"].updateGauge(float64(statStruct.BuckHashSys))
+	buf.Metrics["Frees"].updateGauge(float64(statStruct.Frees))
+	buf.Metrics["GCCPUFraction"].updateGauge(float64(statStruct.GCCPUFraction))
+	buf.Metrics["GCSys"].updateGauge(float64(statStruct.GCSys))
+	buf.Metrics["HeapAlloc"].updateGauge(float64(statStruct.HeapAlloc))
+	buf.Metrics["HeapIdle"].updateGauge(float64(statStruct.HeapIdle))
+	buf.Metrics["HeapInuse"].updateGauge(float64(statStruct.HeapInuse))
+	buf.Metrics["HeapObjects"].updateGauge(float64(statStruct.HeapObjects))
+	buf.Metrics["HeapReleased"].updateGauge(float64(statStruct.HeapReleased))
+	buf.Metrics["HeapSys"].updateGauge(float64(statStruct.HeapSys))
+	buf.Metrics["LastGC"].updateGauge(float64(statStruct.LastGC))
+	buf.Metrics["Lookups"].updateGauge(float64(statStruct.Lookups))
+	buf.Metrics["MCacheInuse"].updateGauge(float64(statStruct.MCacheInuse))
+	buf.Metrics["MCacheSys"].updateGauge(float64(statStruct.MCacheSys))
+	buf.Metrics["MSpanInuse"].updateGauge(float64(statStruct.MSpanInuse))
+	buf.Metrics["MSpanSys"].updateGauge(float64(statStruct.MSpanSys))
+	buf.Metrics["Mallocs"].updateGauge(float64(statStruct.Mallocs))
+	buf.Metrics["NextGC"].updateGauge(float64(statStruct.NextGC))
+	buf.Metrics["NumForcedGC"].updateGauge(float64(statStruct.NumForcedGC))
+	buf.Metrics["NumGC"].updateGauge(float64(statStruct.NumGC))
+	buf.Metrics["OtherSys"].updateGauge(float64(statStruct.OtherSys))
+	buf.Metrics["PauseTotalNs"].updateGauge(float64(statStruct.PauseTotalNs))
+	buf.Metrics["StackInuse"].updateGauge(float64(statStruct.StackInuse))
+	buf.Metrics["StackSys"].updateGauge(float64(statStruct.StackSys))
+	buf.Metrics["Sys"].updateGauge(float64(statStruct.Sys))
+	buf.Metrics["TotalAlloc"].updateGauge(float64(statStruct.TotalAlloc))
 
 	buf.Metrics["PollCount"].updateCounter()
 
 	buf.Metrics["RandomValue"].updateGauge(rand.Float64())
 
-	mutex.Unlock()
-
-	return nil
+	buf.Unlock()
 }
 
 func (buf *MetricBuf) ResetCountersValues() {
+	buf.Lock()
 	for _, metrica := range buf.Metrics {
 		if metrica.MType == CounterType {
 			*metrica.Delta = 0
 		}
 	}
+	buf.Unlock()
+}
+
+func (buf *MetricBuf) Lock() {
+	buf.mutex.Lock()
+}
+
+func (buf *MetricBuf) Unlock() {
+	buf.mutex.Unlock()
 }
