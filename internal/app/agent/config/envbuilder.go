@@ -7,16 +7,13 @@ import (
 )
 
 func (c *Config) readEnv() {
-	addr := os.Getenv("ADDRESS")
-	pollInt := os.Getenv("POLL_INTERVAL")
-	reportInt := os.Getenv("REPORT_INTERVAL")
-	if addr != "" {
+	if addr, ok := os.LookupEnv("ADDRESS"); ok {
 		c.addressEnv = &addr
 	}
-	if pollInt != "" {
+	if pollInt, ok := os.LookupEnv("POLL_INTERVAL"); ok {
 		c.pollIntervalEnv = &pollInt
 	}
-	if reportInt != "" {
+	if reportInt, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
 		c.reportIntervalEnv = &reportInt
 	}
 }

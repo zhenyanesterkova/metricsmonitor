@@ -9,25 +9,19 @@ import (
 )
 
 func (c *Config) setEnvServerConfig() {
-	envEndpoint := os.Getenv("ADDRESS")
-
-	if envEndpoint != "" {
+	if envEndpoint, ok := os.LookupEnv("ADDRESS"); ok {
 		c.SConfig.Address = envEndpoint
 	}
 }
 
 func (c *Config) setEnvLoggerConfig() {
-	envLogLevel := os.Getenv("LOG_LEVEL")
-
-	if envLogLevel != "" {
+	if envLogLevel, ok := os.LookupEnv("LOG_LEVEL"); ok {
 		c.LConfig.Level = envLogLevel
 	}
 }
 
 func (c *Config) setEnvRestoreConfig() error {
-	envStoreInt := os.Getenv("STORE_INTERVAL")
-
-	if envStoreInt != "" {
+	if envStoreInt, ok := os.LookupEnv("STORE_INTERVAL"); ok {
 		dur, err := time.ParseDuration(envStoreInt + "s")
 		if err != nil {
 			return errors.New("can not parse store interval as duration" + err.Error())
@@ -35,15 +29,11 @@ func (c *Config) setEnvRestoreConfig() error {
 		c.RConfig.StoreInterval = dur
 	}
 
-	envFileStoragePath := os.Getenv("FILE_STORAGE_PATH")
-
-	if envFileStoragePath != "" {
+	if envFileStoragePath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 		c.RConfig.FileStoragePath = envFileStoragePath
 	}
 
-	envRestore := os.Getenv("RESTORE")
-
-	if envRestore != "" {
+	if envRestore, ok := os.LookupEnv("RESTORE"); ok {
 		path, err := strconv.ParseBool(envRestore)
 		if err != nil {
 			return errors.New("can not parse need store" + err.Error())

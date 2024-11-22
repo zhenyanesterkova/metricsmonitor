@@ -39,7 +39,12 @@ func main() {
 	go stats.UpdateStatistic()
 	wg.Add(1)
 
-	go senderStat.SendReport()
+	go func() {
+		err := senderStat.SendReport()
+		if err != nil {
+			log.Fatalf("an error occurred while send report on server %v", err)
+		}
+	}()
 	wg.Add(1)
 
 	wg.Wait()
