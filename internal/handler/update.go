@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 )
@@ -55,13 +56,25 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 }
 
 func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
+	log := rh.Logger.LogrusLog
+
+	log.Info("updating metric ...")
+
 	newMetric := metric.New("")
 	dec := json.NewDecoder(r.Body)
+
 	if err := dec.Decode(&newMetric); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
+
+	log.WithFields(logrus.Fields{
+		"ID":    newMetric.ID,
+		"Type":  newMetric.MType,
+		"Value": *newMetric.Value,
+		"Delta": *newMetric.Delta,
+	}).Info("metric for updating")
 
 	updating, err := rh.Repo.UpdateMetric(newMetric)
 	if err != nil {
