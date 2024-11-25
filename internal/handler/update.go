@@ -13,6 +13,10 @@ import (
 )
 
 func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
+	log := rh.Logger.LogrusLog
+
+	log.Info("updating metric ...")
+
 	metricType := chi.URLParam(r, "typeMetric")
 	metricName := chi.URLParam(r, "nameMetric")
 	metricValue := chi.URLParam(r, "valueMetric")
@@ -35,6 +39,13 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 		}
 		*metrica.Delta = val
 	}
+
+	log.WithFields(logrus.Fields{
+		"ID":    metrica.ID,
+		"Type":  metrica.MType,
+		"Value": *metrica.Value,
+		"Delta": *metrica.Delta,
+	}).Info("metric for updating")
 
 	_, err := rh.Repo.UpdateMetric(metrica)
 	if err != nil {
