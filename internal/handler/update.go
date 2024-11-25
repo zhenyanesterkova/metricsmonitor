@@ -31,6 +31,11 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 			return
 		}
 		*metrica.Value = val
+		log.WithFields(logrus.Fields{
+			"ID":    metrica.ID,
+			"Type":  metrica.MType,
+			"Value": *metrica.Value,
+		}).Info("gauge metric updating")
 	case metric.TypeCounter:
 		val, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
@@ -38,14 +43,12 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 			return
 		}
 		*metrica.Delta = val
+		log.WithFields(logrus.Fields{
+			"ID":    metrica.ID,
+			"Type":  metrica.MType,
+			"Delta": *metrica.Delta,
+		}).Info("counter metric updating")
 	}
-
-	log.WithFields(logrus.Fields{
-		"ID":    metrica.ID,
-		"Type":  metrica.MType,
-		"Value": *metrica.Value,
-		"Delta": *metrica.Delta,
-	}).Info("metric for updating")
 
 	_, err := rh.Repo.UpdateMetric(metrica)
 	if err != nil {
