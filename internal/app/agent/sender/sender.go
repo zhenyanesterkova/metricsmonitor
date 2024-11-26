@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,10 +11,6 @@ import (
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
-)
-
-const (
-	countCheckServer = 3
 )
 
 type Sender struct {
@@ -81,21 +76,7 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 func (s Sender) SendReport() error {
 	defer s.Report.WGroup.Done()
 
-	var ok bool
-	for range countCheckServer {
-		ok = s.checkServerAvailability()
-		if !ok {
-			time.Sleep(time.Minute)
-			continue
-		}
-		break
-	}
-
-	if !ok {
-		return fmt.Errorf("sender.go func SendReport(): %w", errors.New("the server is not available"))
-	}
-
-	log.Println("Start report statistic ...")
+	log.Println("Start send statistic ...")
 	ticker := time.NewTicker(s.ReportInterval)
 	for range ticker.C {
 		s.Report.MetricsBuf.Lock()
@@ -103,29 +84,10 @@ func (s Sender) SendReport() error {
 			err := s.SendQueryUpdateMetric(name)
 			if err != nil {
 				log.Printf("an error occurred while sending the report to the server %v", err)
-				return fmt.Errorf("sender.go func SendReport(): send metric error - %w", err)
 			}
 		}
 		s.Report.MetricsBuf.Unlock()
 		s.Report.MetricsBuf.ResetCountersValues()
 	}
 	return nil
-}
-
-func (s Sender) checkServerAvailability() bool {
-	log.Println("Check server availability ...")
-	url := fmt.Sprintf("http://%s/", s.Endpoint)
-	resp, err := s.Client.Get(url)
-	if err != nil {
-		log.Println("Connection is not established, waiting 1 minute")
-		return false
-	}
-
-	err = resp.Body.Close()
-	if err != nil {
-		return false
-	}
-
-	log.Println("Connection is established")
-	return true
 }
