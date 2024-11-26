@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -83,12 +82,8 @@ func (s Sender) SendReport() error {
 	defer s.Report.WGroup.Done()
 
 	var ok bool
-	var err error
 	for range countCheckServer {
-		ok, err = s.checkServerAvailability()
-		if err != nil {
-			return fmt.Errorf("sender.go func SendReport() error check server - %w", err)
-		}
+		ok = s.checkServerAvailability()
 		if !ok {
 			time.Sleep(time.Minute)
 			continue
@@ -117,23 +112,20 @@ func (s Sender) SendReport() error {
 	return nil
 }
 
-func (s Sender) checkServerAvailability() (bool, error) {
+func (s Sender) checkServerAvailability() bool {
 	log.Println("Check server availability ...")
 	url := fmt.Sprintf("http://%s/", s.Endpoint)
 	resp, err := s.Client.Get(url)
 	if err != nil {
-		if strings.Contains(err.Error(), "refused") {
-			log.Println("Target machine actively refused connection, waiting for 1 minute")
-			return false, nil
-		}
-		return false, fmt.Errorf("sender.go func checkServerAvailability(): error do request - %w", err)
+		log.Println("Connection is not established, waiting 1 minute")
+		return false
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return false, fmt.Errorf("sender.go func checkServerAvailability(): error close body - %w", err)
+		return false
 	}
 
 	log.Println("Connection is established")
-	return true, nil
+	return true
 }
