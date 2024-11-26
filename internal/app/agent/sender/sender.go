@@ -122,7 +122,7 @@ func (s Sender) checkServerAvailability() (bool, error) {
 	url := fmt.Sprintf("http://%s/", s.Endpoint)
 	resp, err := s.Client.Get(url)
 	if err != nil {
-		if strings.Contains(err.Error(), "No connection could be made because the target machine actively refused it") {
+		if strings.Contains(err.Error(), "refused") {
 			log.Println("Target machine actively refused connection, waiting for 1 minute")
 			return false, nil
 		}
