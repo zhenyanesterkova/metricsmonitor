@@ -4,13 +4,19 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
+)
+
+const (
+	countCheckServer = 3
 )
 
 type Sender struct {
@@ -75,6 +81,26 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 
 func (s Sender) SendReport() error {
 	defer s.Report.WGroup.Done()
+
+	var ok bool
+	var err error
+	for range countCheckServer {
+		ok, err = s.checkServerAvailability()
+		if err != nil {
+			return fmt.Errorf("sender.go func SendReport() error check server - %w", err)
+		}
+		if !ok {
+			time.Sleep(time.Minute)
+			continue
+		}
+		break
+	}
+
+	if !ok {
+		return fmt.Errorf("sender.go func SendReport(): %w", errors.New("the server is not available"))
+	}
+
+	log.Println("Start report statistic ...")
 	ticker := time.NewTicker(s.ReportInterval)
 	for range ticker.C {
 		s.Report.MetricsBuf.Lock()
@@ -89,4 +115,25 @@ func (s Sender) SendReport() error {
 		s.Report.MetricsBuf.ResetCountersValues()
 	}
 	return nil
+}
+
+func (s Sender) checkServerAvailability() (bool, error) {
+	log.Println("Check server availability ...")
+	url := fmt.Sprintf("http://%s/", s.Endpoint)
+	resp, err := s.Client.Get(url)
+	if err != nil {
+		if strings.Contains(err.Error(), "No connection could be made because the target machine actively refused it") {
+			log.Println("Target machine actively refused connection, waiting for 1 minute")
+			return false, nil
+		}
+		return false, fmt.Errorf("sender.go func checkServerAvailability(): error do request - %w", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return false, fmt.Errorf("sender.go func checkServerAvailability(): error close body - %w", err)
+	}
+
+	log.Println("Connection is established")
+	return true, nil
 }
