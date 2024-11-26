@@ -8,6 +8,10 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/middleware"
 )
 
+const (
+	TextServerError = "Something went wrong... Server error"
+)
+
 type Repositorie interface {
 	UpdateMetric(metric.Metric) (metric.Metric, error)
 	GetAllMetrics() ([][2]string, error)

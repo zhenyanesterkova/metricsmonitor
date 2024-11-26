@@ -60,8 +60,8 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 			errors.Is(err, metric.ErrInvalidType):
 			w.WriteHeader(http.StatusBadRequest)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(err.Error()))
+			log.Errorf("handler func UpdateMetric(): error update metric - %v", err)
+			http.Error(w, TextServerError, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -78,8 +78,8 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 	dec := json.NewDecoder(r.Body)
 
 	if err := dec.Decode(&newMetric); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
+		log.Errorf("handler func UpdateMetricJSON(): error decode metric - %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -100,10 +100,9 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 			errors.Is(err, metric.ErrInvalidType):
 			w.WriteHeader(http.StatusBadRequest)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
+			log.Errorf("handler func UpdateMetricJSON(): error update metric - %v", err)
+			http.Error(w, TextServerError, http.StatusInternalServerError)
 		}
-
-		_, _ = w.Write([]byte(err.Error()))
 
 		return
 	}
@@ -113,8 +112,8 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(updating); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
+		log.Errorf("handler func UpdateMetricJSON(): error encode metric - %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return
 	}
 }
