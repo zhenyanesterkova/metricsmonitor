@@ -76,9 +76,9 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 func (s Sender) SendReport() error {
 	defer s.Report.WGroup.Done()
 
-	log.Println("Start send statistic ...")
 	ticker := time.NewTicker(s.ReportInterval)
 	for range ticker.C {
+		log.Println("Start send statistic ...")
 		s.Report.MetricsBuf.Lock()
 		for name := range s.Report.MetricsBuf.Metrics {
 			err := s.SendQueryUpdateMetric(name)
@@ -88,6 +88,7 @@ func (s Sender) SendReport() error {
 		}
 		s.Report.MetricsBuf.Unlock()
 		s.Report.MetricsBuf.ResetCountersValues()
+		log.Println("End send statistic ...")
 	}
 	return nil
 }
