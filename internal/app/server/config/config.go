@@ -28,11 +28,9 @@ func New() *Config {
 }
 
 func (c *Config) Build() error {
-	err := c.flagBuild()
-	if err != nil {
-		return fmt.Errorf("error build config from flags: %w", err)
-	}
-	err = c.envBuild()
+	c.flagBuild()
+
+	err := c.envBuild()
 	if err != nil {
 		return fmt.Errorf("error build config from env: %w", err)
 	}

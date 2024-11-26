@@ -5,6 +5,5 @@ const (
 )
 
 type LoggerConfig struct {
-	levelParam *string
-	Level      string
+	Level string
 }

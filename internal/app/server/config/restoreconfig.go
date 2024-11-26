@@ -11,10 +11,7 @@ const (
 )
 
 type RestoreConfig struct {
-	filePathParam        *string
-	restoreParam         *bool
-	storeIntervalParamFl *int
-	FileStoragePath      string
-	StoreInterval        time.Duration
-	Restore              bool
+	FileStoragePath string
+	StoreInterval   time.Duration
+	Restore         bool
 }

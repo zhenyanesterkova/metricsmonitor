@@ -5,6 +5,5 @@ const (
 )
 
 type ServerConfig struct {
-	addressParam *string
-	Address      string
+	Address string
 }
