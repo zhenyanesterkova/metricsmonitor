@@ -6,27 +6,15 @@ import (
 	"time"
 )
 
-func (c *Config) readEnv() {
-	if addr, ok := os.LookupEnv("ADDRESS"); ok {
-		c.addressEnv = &addr
-	}
-	if pollInt, ok := os.LookupEnv("POLL_INTERVAL"); ok {
-		c.pollIntervalEnv = &pollInt
-	}
-	if reportInt, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
-		c.reportIntervalEnv = &reportInt
-	}
-}
-
 func (c *Config) setEnvAddress() {
-	if c.addressEnv != nil {
-		c.Address = *c.addressEnv
+	if addr, ok := os.LookupEnv("ADDRESS"); ok {
+		c.Address = addr
 	}
 }
 
 func (c *Config) setEnvPollInterval() error {
-	if c.pollIntervalEnv != nil {
-		dur, err := time.ParseDuration(*c.pollIntervalEnv + "s")
+	if pollInt, ok := os.LookupEnv("POLL_INTERVAL"); ok {
+		dur, err := time.ParseDuration(pollInt + "s")
 		if err != nil {
 			return errors.New("can not parse poll_interval as duration" + err.Error())
 		}
@@ -34,9 +22,10 @@ func (c *Config) setEnvPollInterval() error {
 	}
 	return nil
 }
+
 func (c *Config) setEnvReportInterval() error {
-	if c.reportIntervalEnv != nil {
-		dur, err := time.ParseDuration(*c.reportIntervalEnv + "s")
+	if reportInt, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
+		dur, err := time.ParseDuration(reportInt + "s")
 		if err != nil {
 			return errors.New("can not parse report_interval as duration" + err.Error())
 		}
@@ -46,8 +35,6 @@ func (c *Config) setEnvReportInterval() error {
 }
 
 func (c *Config) buildEnv() error {
-	c.readEnv()
-
 	c.setEnvAddress()
 
 	err := c.setEnvPollInterval()

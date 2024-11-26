@@ -11,15 +11,9 @@ const (
 )
 
 type Config struct {
-	pollIntervalFl    *int
-	reportIntervalFl  *int
-	addressEnv        *string
-	pollIntervalEnv   *string
-	reportIntervalEnv *string
-	addressFl         *string
-	Address           string
-	PollInterval      time.Duration
-	ReportInterval    time.Duration
+	Address        string
+	PollInterval   time.Duration
+	ReportInterval time.Duration
 }
 
 func New() *Config {
@@ -31,11 +25,9 @@ func New() *Config {
 }
 
 func (c *Config) Build() error {
-	err := c.buildFlags()
-	if err != nil {
-		return err
-	}
-	err = c.buildEnv()
+	c.buildFlags()
+
+	err := c.buildEnv()
 	if err != nil {
 		return err
 	}
