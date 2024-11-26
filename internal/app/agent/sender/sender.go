@@ -56,7 +56,7 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
-		log.Printf("sender.go func SendQueryUpdateMetric(): error do request - %v", err)
+		return fmt.Errorf("sender.go func SendQueryUpdateMetric(): error do request - %w", err)
 	}
 
 	responseMetric := metric.Metric{}
@@ -82,7 +82,6 @@ func (s Sender) SendReport() error {
 			err := s.SendQueryUpdateMetric(name)
 			if err != nil {
 				log.Printf("an error occurred while sending the report to the server %v", err)
-				return fmt.Errorf("sender.go func SendReport(): send metric error - %w", err)
 			}
 		}
 		s.Report.MetricsBuf.Unlock()
