@@ -12,23 +12,23 @@ const (
 )
 
 type CompressWriter struct {
-	W  http.ResponseWriter
-	ZW *gzip.Writer
+	w  http.ResponseWriter
+	zw *gzip.Writer
 }
 
 func NewCompressWriter(w http.ResponseWriter) *CompressWriter {
 	return &CompressWriter{
-		W:  w,
-		ZW: gzip.NewWriter(w),
+		w:  w,
+		zw: gzip.NewWriter(w),
 	}
 }
 
 func (c *CompressWriter) Header() http.Header {
-	return c.W.Header()
+	return c.w.Header()
 }
 
 func (c *CompressWriter) Write(p []byte) (int, error) {
-	n, err := c.ZW.Write(p)
+	n, err := c.zw.Write(p)
 	if err != nil {
 		return n, fmt.Errorf("gzip.go func Write(): error write - %w", err)
 	}
@@ -37,13 +37,13 @@ func (c *CompressWriter) Write(p []byte) (int, error) {
 
 func (c *CompressWriter) WriteHeader(statusCode int) {
 	if statusCode < successfulMaxCode {
-		c.W.Header().Set("Content-Encoding", "gzip")
+		c.w.Header().Set("Content-Encoding", "gzip")
 	}
-	c.W.WriteHeader(statusCode)
+	c.w.WriteHeader(statusCode)
 }
 
 func (c *CompressWriter) Close() error {
-	err := c.ZW.Close()
+	err := c.zw.Close()
 	if err != nil {
 		return fmt.Errorf("gzip.go func Close(): error close - %w", err)
 	}
@@ -51,8 +51,8 @@ func (c *CompressWriter) Close() error {
 }
 
 type CompressReader struct {
-	R  io.ReadCloser
-	ZR *gzip.Reader
+	r  io.ReadCloser
+	zr *gzip.Reader
 }
 
 func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
@@ -62,13 +62,13 @@ func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 	}
 
 	return &CompressReader{
-		R:  r,
-		ZR: zr,
+		r:  r,
+		zr: zr,
 	}, nil
 }
 
 func (c CompressReader) Read(p []byte) (n int, err error) {
-	n, err = c.ZR.Read(p)
+	n, err = c.zr.Read(p)
 	if err != nil {
 		return n, fmt.Errorf("gzip.go func Read(): error read - %w", err)
 	}
@@ -76,10 +76,10 @@ func (c CompressReader) Read(p []byte) (n int, err error) {
 }
 
 func (c *CompressReader) Close() error {
-	if err := c.R.Close(); err != nil {
+	if err := c.r.Close(); err != nil {
 		return fmt.Errorf("gzip.go func Close(): %w", err)
 	}
-	if err := c.ZR.Close(); err != nil {
+	if err := c.zr.Close(); err != nil {
 		return fmt.Errorf("gzip.go func Close(): %w", err)
 	}
 	return nil
