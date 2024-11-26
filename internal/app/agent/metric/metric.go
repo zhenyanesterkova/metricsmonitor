@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -9,6 +10,10 @@ type Metric struct {
 	Value *float64 `json:"value,omitempty"`
 	ID    string   `json:"id"`
 	MType string   `json:"type"`
+}
+
+func (m *Metric) String() string {
+	return fmt.Sprintf("metricID=%s, metricType=%s, metricVal=%s", m.ID, m.MType, m.StringValue())
 }
 
 func (m *Metric) StringValue() string {

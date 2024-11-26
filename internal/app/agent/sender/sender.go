@@ -44,6 +44,8 @@ func (s Sender) SendQueryUpdateMetric(metricName string) error {
 
 	url := fmt.Sprintf("http://%s/update/", s.Endpoint)
 
+	log.Printf("new request to url=%s, method=%s, data: %s", url, http.MethodPost, upMetric)
+
 	req, err := http.NewRequest(http.MethodPost, url, &buff)
 	if err != nil {
 		return fmt.Errorf("sender.go func SendQueryUpdateMetric(): error create request - %w", err)
