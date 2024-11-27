@@ -25,9 +25,12 @@ func New() *Config {
 }
 
 func (c *Config) Build() error {
-	c.buildFlags()
+	err := c.buildFlags()
+	if err != nil {
+		return err
+	}
 
-	err := c.buildEnv()
+	err = c.buildEnv()
 	if err != nil {
 		return err
 	}

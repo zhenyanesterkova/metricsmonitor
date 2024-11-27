@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 func (c *Config) setEnvServerConfig() {
 	if envEndpoint, ok := os.LookupEnv("ADDRESS"); ok {
+		log.Printf("Address from env: %s", envEndpoint)
 		c.SConfig.Address = envEndpoint
 	}
 }

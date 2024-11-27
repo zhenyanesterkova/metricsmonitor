@@ -82,6 +82,7 @@ func run() error {
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 
 	loggerInst.LogrusLog.Debugf("Start Server on %s", cfg.SConfig.Address)
+	loggerInst.LogrusLog.Infof("Start Server on %s", cfg.SConfig.Address)
 	go func() {
 		if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {
 			loggerInst.LogrusLog.Errorf("server error: %v", err)
