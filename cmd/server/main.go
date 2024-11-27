@@ -7,15 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/rwfile"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage"
 )
 
 func main() {
@@ -39,39 +37,18 @@ func run() error {
 		return fmt.Errorf("parse log level error: %w", err)
 	}
 
-	storage := memstorage.New()
+	storage, err := storage.NewStore(cfg.RConfig, loggerInst)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("can not create storage: %v", err)
+		return fmt.Errorf("can not create storage: %w", err)
+	}
 
-	fileWriter, err := rwfile.NewFileWriter(cfg.RConfig.FileStoragePath)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("can not create file writer: %v", err)
-		return fmt.Errorf("file writer error: %w", err)
-	}
-	fileReader, err := rwfile.NewFileReader(cfg.RConfig.FileStoragePath)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("can not create file reader: %v", err)
-		return fmt.Errorf("file reader error: %w", err)
-	}
 	defer func() {
-		err := fileWriter.Close()
+		err := storage.Close()
 		if err != nil {
-			loggerInst.LogrusLog.Errorf("can not close file writer: %v", err)
+			loggerInst.LogrusLog.Errorf("can not close storage: %v", err)
 		}
 	}()
-	defer func() {
-		err := fileReader.Close()
-		if err != nil {
-			loggerInst.LogrusLog.Errorf("can not close file reader: %v", err)
-		}
-	}()
-	if cfg.RConfig.Restore {
-		mementoMemStorage := storage.CreateMemento()
-		err := fileReader.ReadSnapStorage(mementoMemStorage)
-		if err != nil {
-			loggerInst.LogrusLog.Errorf("can not read snapshot of storage from file %s: %v", cfg.RConfig.FileStoragePath, err)
-			return fmt.Errorf("snapshot of storage error: %w", err)
-		}
-		storage.RestoreMemento(mementoMemStorage)
-	}
 
 	router := chi.NewRouter()
 
@@ -88,30 +65,9 @@ func run() error {
 			loggerInst.LogrusLog.Errorf("server error: %v", err)
 		}
 	}()
-	go func() {
-		ticker := time.NewTicker(cfg.RConfig.StoreInterval)
-		for range ticker.C {
-			loggerInst.LogrusLog.Info("starting storage copying...")
-			mementoStorage := storage.CreateMemento()
-			err := fileWriter.WriteSnapStorage(*mementoStorage)
-			if err != nil {
-				loggerInst.LogrusLog.Errorf("can not write snapshot of storage to file %s: %v", cfg.RConfig.FileStoragePath, err)
-			}
-			loggerInst.LogrusLog.Info("end storage copying...")
-		}
-	}()
 
 	s := <-c
 	loggerInst.LogrusLog.Info("Got signal: ", s)
-
-	loggerInst.LogrusLog.Info("starting storage copying...")
-	mementoStorage := storage.CreateMemento()
-	err = fileWriter.WriteSnapStorage(*mementoStorage)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("can not write snapshot of storage to file %s: %v", cfg.RConfig.FileStoragePath, err)
-		return fmt.Errorf("snapshot of storage error when exit from app: %w", err)
-	}
-	loggerInst.LogrusLog.Info("end storage copying...")
 
 	return nil
 }

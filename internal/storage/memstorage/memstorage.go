@@ -75,3 +75,7 @@ func (s *MemStorage) CreateMemento() *Memento {
 func (s *MemStorage) RestoreMemento(m *Memento) {
 	s.metrics = m.GetSavedState()
 }
+
+func (s *MemStorage) Close() error {
+	return nil
+}

@@ -11,12 +11,11 @@ const (
 )
 
 type FileWriter struct {
-	file   *os.File
-	writer *bufio.Writer
+	File *os.File
 }
 
 func (c *FileWriter) Close() error {
-	err := c.file.Close()
+	err := c.File.Close()
 	if err != nil {
 		return fmt.Errorf("restorer.go Close: %w", err)
 	}
@@ -30,14 +29,13 @@ func NewFileWriter(filename string) (*FileWriter, error) {
 	}
 
 	return &FileWriter{
-		file:   file,
-		writer: bufio.NewWriter(file),
+		File: file,
 	}, nil
 }
 
 type FileReader struct {
 	file   *os.File
-	reader *bufio.Scanner
+	Reader *bufio.Scanner
 }
 
 func NewFileReader(filename string) (*FileReader, error) {
@@ -48,7 +46,7 @@ func NewFileReader(filename string) (*FileReader, error) {
 
 	return &FileReader{
 		file:   file,
-		reader: bufio.NewScanner(file),
+		Reader: bufio.NewScanner(file),
 	}, nil
 }
 
