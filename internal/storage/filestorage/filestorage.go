@@ -42,13 +42,11 @@ func New(conf config.RestoreConfig, storeLog logger.LogrusLogger) (*FileStorage,
 		}
 	}
 
-	go func() error {
+	go func() {
 		err := fileStore.startSaveStorage(conf.StoreInterval)
 		if err != nil {
 			fileStore.log.LogrusLog.Errorf("error save storage: %v", err)
-			return fmt.Errorf("error save storage: %w", err)
 		}
-		return nil
 	}()
 
 	return &fileStore, nil
