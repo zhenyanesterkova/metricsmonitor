@@ -3,79 +3,56 @@ package config
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"strconv"
 	"time"
 )
 
-type flagConfig struct {
-	address          string
-	pollInterval     time.Duration
-	reportInterval   time.Duration
-	parseFlagsStruct *flags
-}
+func (c *Config) setFlags() error {
+	flag.StringVar(&c.Address, "a", c.Address, "address and port to run server")
 
-type flags struct {
-	addressFl string
-	pollFl    int
-	reportFl  int
-}
+	var durPoll int
+	flag.IntVar(&durPoll, "p", defaultPollInt, "the frequency of polling metrics from the runtime package")
 
-func newFlagsConfig() *flagConfig {
-	return &flagConfig{
-		parseFlagsStruct: &flags{},
+	var durRep int
+	flag.IntVar(&durRep, "r", defaultReportInt, "the frequency of sending metrics to the server")
+
+	flag.Parse()
+
+	if isFlagPassed("p") {
+		dur, err := time.ParseDuration(strconv.Itoa(durPoll) + "s")
+		if err != nil {
+			return errors.New("can not parse poll_interval as duration " + err.Error())
+		}
+		c.PollInterval = dur
 	}
-}
 
-func (fc *flagConfig) setFlagAddress() {
-	flag.StringVar(&fc.parseFlagsStruct.addressFl, "a", "localhost:8080", "address and port to run server")
-}
-func (fc *flagConfig) setFlagPoll() {
-	flag.IntVar(&fc.parseFlagsStruct.pollFl, "p", 2, "the frequency of polling metrics from the runtime package")
-}
-func (fc *flagConfig) setFlagReport() {
-	flag.IntVar(&fc.parseFlagsStruct.reportFl, "r", 10, "the frequency of sending metrics to the server")
-}
-
-func (fc *flagConfig) SetAddress() {
-	fc.address = fc.parseFlagsStruct.addressFl
-}
-func (fc *flagConfig) SetPollInterval() error {
-
-	dur, err := time.ParseDuration(strconv.Itoa(fc.parseFlagsStruct.pollFl) + "s")
-	if err != nil {
-		return errors.New("can not parse poll_interval as duration " + err.Error())
+	if isFlagPassed("r") {
+		dur, err := time.ParseDuration(strconv.Itoa(durRep) + "s")
+		if err != nil {
+			return errors.New("can not parse report_interval as duration " + err.Error())
+		}
+		c.ReportInterval = dur
 	}
-	fc.pollInterval = dur
-
-	return nil
-}
-func (fc *flagConfig) SetReportInterval() error {
-
-	dur, err := time.ParseDuration(strconv.Itoa(fc.parseFlagsStruct.reportFl) + "s")
-	if err != nil {
-		return errors.New("can not parse report_interval as duration " + err.Error())
-	}
-	fc.reportInterval = dur
 
 	return nil
 }
 
-func (fc *flagConfig) Build() (Config, error) {
-	fc.SetAddress()
-
-	err := fc.SetPollInterval()
+func (c *Config) buildFlags() error {
+	err := c.setFlags()
 	if err != nil {
-		return Config{}, err
+		return fmt.Errorf("config func buildFlags(): %w", err)
 	}
 
-	err = fc.SetReportInterval()
-	if err != nil {
-		return Config{}, err
-	}
+	return nil
+}
 
-	return Config{
-		Address:        fc.address,
-		PollInterval:   fc.pollInterval,
-		ReportInterval: fc.reportInterval,
-	}, nil
+func isFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }

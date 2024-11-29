@@ -1,0 +1,11 @@
+repos:
+  - repo: local
+
+    hooks:
+      - id: golangci-lint
+
+        name: Run my golangci-lint
+
+        entry: golangci-lint-pre-commit.sh
+
+        language: script

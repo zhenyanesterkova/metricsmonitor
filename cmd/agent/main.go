@@ -12,12 +12,10 @@ import (
 )
 
 func main() {
-
-	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
-	cfgBuilder := config.GetConfigBuilder()
-	cfg, err := cfgBuilder.Build()
+	cfg := config.New()
+	err := cfg.Build()
 	if err != nil {
 		log.Fatalf("an error occurred while reading the config %v", err)
 	}
@@ -25,27 +23,29 @@ func main() {
 	metrics := metric.NewMetricBuf()
 	stats := statistic.Statistic{
 		PollInterval: cfg.PollInterval,
-		Mutex:        &mutex,
 		WGroup:       &wg,
 		MetricsBuf:   metrics,
 	}
-	sender := sender.Sender{
+	senderStat := sender.Sender{
 		Client:         &http.Client{},
 		Endpoint:       cfg.Address,
 		ReportInterval: cfg.ReportInterval,
 		Report: sender.ReportData{
 			MetricsBuf: metrics,
 			WGroup:     &wg,
-			Mutex:      &mutex,
 		},
 	}
 
-	wg.Add(2)
-
 	go stats.UpdateStatistic()
+	wg.Add(1)
 
-	go sender.SendReport()
+	go func() {
+		err := senderStat.SendReport()
+		if err != nil {
+			log.Fatalf("an error occurred while send report on server %v", err)
+		}
+	}()
+	wg.Add(1)
 
 	wg.Wait()
-
 }

@@ -2,61 +2,54 @@ package config
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 )
 
-type envConfig struct {
-	address        string
-	pollInterval   time.Duration
-	reportInterval time.Duration
-}
-
-func newEnvConfig() *envConfig {
-	return &envConfig{}
-}
-
-func (ec *envConfig) SetAddress() {
-	ec.address = os.Getenv("ADDRESS")
-}
-
-func (ec *envConfig) SetPollInterval() error {
-
-	dur, err := time.ParseDuration(os.Getenv("POLL_INTERVAL") + "s")
-	if err != nil {
-		return errors.New("can not parse poll_interval as duration" + err.Error())
+func (c *Config) setEnvAddress() {
+	if addr, ok := os.LookupEnv("ADDRESS"); ok {
+		log.Printf("env:ADDRESS=%s", addr)
+		c.Address = addr
 	}
-	ec.pollInterval = dur
-
-	return nil
 }
-func (ec *envConfig) SetReportInterval() error {
 
-	dur, err := time.ParseDuration(os.Getenv("REPORT_INTERVAL") + "s")
-	if err != nil {
-		return errors.New("can not parse report_interval as duration" + err.Error())
+func (c *Config) setEnvPollInterval() error {
+	if pollInt, ok := os.LookupEnv("POLL_INTERVAL"); ok {
+		log.Printf("env:POLL_INTERVAL=%s", pollInt)
+		dur, err := time.ParseDuration(pollInt + "s")
+		if err != nil {
+			return errors.New("can not parse poll_interval as duration" + err.Error())
+		}
+		c.PollInterval = dur
 	}
-	ec.reportInterval = dur
-
 	return nil
 }
 
-func (ec *envConfig) Build() (Config, error) {
-	ec.SetAddress()
+func (c *Config) setEnvReportInterval() error {
+	if reportInt, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
+		log.Printf("env:REPORT_INTERVAL=%s", reportInt)
+		dur, err := time.ParseDuration(reportInt + "s")
+		if err != nil {
+			return errors.New("can not parse report_interval as duration" + err.Error())
+		}
+		c.ReportInterval = dur
+	}
+	return nil
+}
 
-	err := ec.SetPollInterval()
+func (c *Config) buildEnv() error {
+	c.setEnvAddress()
+
+	err := c.setEnvPollInterval()
 	if err != nil {
-		return Config{}, err
+		return err
 	}
 
-	err = ec.SetReportInterval()
+	err = c.setEnvReportInterval()
 	if err != nil {
-		return Config{}, err
+		return err
 	}
 
-	return Config{
-		Address:        ec.address,
-		PollInterval:   ec.pollInterval,
-		ReportInterval: ec.reportInterval,
-	}, nil
+	return nil
 }

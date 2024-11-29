@@ -2,7 +2,6 @@ package memstorage
 
 import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric/metricerrors"
 )
 
 type MemStorage struct {
@@ -26,47 +25,57 @@ func (s *MemStorage) GetAllMetrics() ([][2]string, error) {
 	return res, nil
 }
 
-func (s *MemStorage) GetMetricValue(name, typeMetric string) (string, error) {
-	if metric, ok := s.metrics[name]; ok {
-		if metric.GetType() == typeMetric {
-			return metric.String(), nil
+func (s *MemStorage) GetMetricValue(name, typeMetric string) (metric.Metric, error) {
+	if metrica, ok := s.metrics[name]; ok {
+		if metrica.GetType() == typeMetric {
+			return metrica, nil
 		} else {
-			return "", metricerrors.ErrInvalidType
+			return metric.Metric{}, metric.ErrInvalidType
 		}
 	}
-	return "", metricerrors.ErrUnknownMetric
+	return metric.Metric{}, metric.ErrUnknownMetric
 }
 
-func (s *MemStorage) UpdateMetric(name, typeMetric string, val string) error {
-	if name == "" {
-		return metricerrors.ErrInvalidName
+func (s *MemStorage) UpdateMetric(newMetric metric.Metric) (metric.Metric, error) {
+	if newMetric.ID == "" {
+		return metric.Metric{}, metric.ErrInvalidName
 	}
-	if typeMetric == "" {
-		return metricerrors.ErrInvalidType
+	if newMetric.MType == "" {
+		return metric.Metric{}, metric.ErrInvalidType
 	}
-	if val == "" {
-		return metricerrors.ErrParseValue
-	}
-
-	if curMetric, ok := s.metrics[name]; ok {
-		if curMetric.GetType() != typeMetric {
-			return metricerrors.ErrInvalidType
-		}
-		err := s.metrics[name].SetValue(val)
-		if err != nil {
-			return err
-		}
-	} else {
-		newMetric, err := metric.New(typeMetric)
-		if err != nil {
-			return err
-		}
-		err = newMetric.SetValue(val)
-		if err != nil {
-			return err
-		}
-		s.metrics[name] = newMetric
+	if newMetric.Value == nil && newMetric.Delta == nil {
+		return metric.Metric{}, metric.ErrParseValue
 	}
 
+	curMetric, ok := s.metrics[newMetric.ID]
+	if !ok {
+		curMetric = metric.New(newMetric.MType)
+		curMetric.ID = newMetric.ID
+	}
+	if curMetric.GetType() != newMetric.MType {
+		return metric.Metric{}, metric.ErrInvalidType
+	}
+
+	switch curMetric.MType {
+	case metric.TypeGauge:
+		curMetric.MetricGauge.SetValue(*newMetric.Value)
+	case metric.TypeCounter:
+		curMetric.MetricCounter.SetValue(*newMetric.Delta)
+	}
+
+	s.metrics[newMetric.ID] = curMetric
+
+	return curMetric, nil
+}
+
+func (s *MemStorage) CreateMemento() *Memento {
+	return &Memento{Metrics: s.metrics}
+}
+
+func (s *MemStorage) RestoreMemento(m *Memento) {
+	s.metrics = m.GetSavedState()
+}
+
+func (s *MemStorage) Close() error {
 	return nil
 }
