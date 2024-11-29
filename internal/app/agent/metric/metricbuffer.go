@@ -13,7 +13,7 @@ const (
 
 type MetricBuf struct {
 	Metrics map[string]*Metric
-	mutex   sync.Mutex
+	mutex   *sync.Mutex
 }
 
 func NewMetricBuf() *MetricBuf {
@@ -136,7 +136,7 @@ func NewMetricBuf() *MetricBuf {
 			MType: "gauge",
 		},
 	}
-	buffer.mutex = sync.Mutex{}
+	buffer.mutex = &sync.Mutex{}
 	return buffer
 }
 
@@ -144,7 +144,8 @@ func (buf *MetricBuf) UpdateMetrics() {
 	statStruct := &runtime.MemStats{}
 	runtime.ReadMemStats(statStruct)
 
-	buf.Lock()
+	buf.mutex.Lock()
+	defer buf.mutex.Unlock()
 
 	buf.Metrics["Alloc"].updateGauge(float64(statStruct.Alloc))
 	buf.Metrics["BuckHashSys"].updateGauge(float64(statStruct.BuckHashSys))
@@ -177,24 +178,14 @@ func (buf *MetricBuf) UpdateMetrics() {
 	buf.Metrics["PollCount"].updateCounter()
 
 	buf.Metrics["RandomValue"].updateGauge(rand.Float64())
-
-	buf.Unlock()
 }
 
 func (buf *MetricBuf) ResetCountersValues() {
-	buf.Lock()
+	buf.mutex.Lock()
+	defer buf.mutex.Unlock()
 	for _, metrica := range buf.Metrics {
 		if metrica.MType == CounterType {
 			*metrica.Delta = 0
 		}
 	}
-	buf.Unlock()
-}
-
-func (buf *MetricBuf) Lock() {
-	buf.mutex.Lock()
-}
-
-func (buf *MetricBuf) Unlock() {
-	buf.mutex.Unlock()
 }

@@ -79,14 +79,12 @@ func (s Sender) SendReport() error {
 	ticker := time.NewTicker(s.ReportInterval)
 	for range ticker.C {
 		log.Println("Start send statistic ...")
-		s.Report.MetricsBuf.Lock()
 		for name := range s.Report.MetricsBuf.Metrics {
 			err := s.SendQueryUpdateMetric(name)
 			if err != nil {
 				log.Printf("an error occurred while sending the report to the server %v", err)
 			}
 		}
-		s.Report.MetricsBuf.Unlock()
 		s.Report.MetricsBuf.ResetCountersValues()
 		log.Println("End send statistic ...")
 	}
