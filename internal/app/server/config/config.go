@@ -6,9 +6,10 @@ import (
 )
 
 type Config struct {
-	SConfig ServerConfig
-	LConfig LoggerConfig
-	RConfig RestoreConfig
+	SConfig  ServerConfig
+	LConfig  LoggerConfig
+	DBConfig DataBaseConfig
+	RConfig  RestoreConfig
 }
 
 func New() *Config {
