@@ -17,6 +17,7 @@ func (c *Config) setFlagsVariables() error {
 
 	flag.StringVar(&c.RConfig.FileStoragePath, "f", c.RConfig.FileStoragePath, "file storage path")
 	flag.BoolVar(&c.RConfig.Restore, "r", c.RConfig.Restore, "need restore")
+	flag.StringVar(&c.DBConfig.DSN, "d", c.DBConfig.DSN, "database dsn")
 	flag.Parse()
 
 	if isFlagPassed("i") {

@@ -50,6 +50,13 @@ func (c *Config) setEnvRestoreConfig() error {
 	return nil
 }
 
+func (c *Config) setDBConfig() {
+	if dsn, ok := os.LookupEnv("DATABASE_DSN"); ok {
+		log.Printf("env:DATABASE_DSN=%s", dsn)
+		c.DBConfig.DSN = dsn
+	}
+}
+
 func (c *Config) envBuild() error {
 	c.setEnvServerConfig()
 	c.setEnvLoggerConfig()
@@ -57,5 +64,6 @@ func (c *Config) envBuild() error {
 	if err != nil {
 		return fmt.Errorf("build env config error: %w", err)
 	}
+	c.setDBConfig()
 	return nil
 }
