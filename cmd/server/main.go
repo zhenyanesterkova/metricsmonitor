@@ -37,7 +37,7 @@ func run() error {
 		return fmt.Errorf("parse log level error: %w", err)
 	}
 
-	store, err := storage.NewStore(cfg.RConfig, loggerInst)
+	store, err := storage.NewStore(cfg.DBConfig, loggerInst)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("can not create storage: %v", err)
 		return fmt.Errorf("can not create storage: %w", err)

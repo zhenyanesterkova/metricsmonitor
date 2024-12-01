@@ -23,19 +23,20 @@ func (c *Config) setEnvLoggerConfig() {
 	}
 }
 
-func (c *Config) setEnvRestoreConfig() error {
+func (c *Config) setDBConfig() error {
 	if envStoreInt, ok := os.LookupEnv("STORE_INTERVAL"); ok {
 		log.Printf("env:STORE_INTERVAL=%s", envStoreInt)
 		dur, err := time.ParseDuration(envStoreInt + "s")
 		if err != nil {
 			return errors.New("can not parse store interval as duration" + err.Error())
 		}
-		c.RConfig.StoreInterval = dur
+		c.DBConfig.StoreInterval = dur
 	}
 
 	if envFileStoragePath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 		log.Printf("env:FILE_STORAGE_PATH=%s", envFileStoragePath)
-		c.RConfig.FileStoragePath = envFileStoragePath
+		c.DBConfig.FileStoragePath = envFileStoragePath
+		c.DBConfig.DBType = FileStorageType
 	}
 
 	if envRestore, ok := os.LookupEnv("RESTORE"); ok {
@@ -44,26 +45,25 @@ func (c *Config) setEnvRestoreConfig() error {
 		if err != nil {
 			return errors.New("can not parse need store" + err.Error())
 		}
-		c.RConfig.Restore = path
+		c.DBConfig.Restore = path
+		c.DBConfig.DBType = FileStorageType
+	}
+
+	if dsn, ok := os.LookupEnv("DATABASE_DSN"); ok {
+		log.Printf("env:DATABASE_DSN=%s", dsn)
+		c.DBConfig.DSN = dsn
+		c.DBConfig.DBType = PostgresStorageType
 	}
 
 	return nil
 }
 
-func (c *Config) setDBConfig() {
-	if dsn, ok := os.LookupEnv("DATABASE_DSN"); ok {
-		log.Printf("env:DATABASE_DSN=%s", dsn)
-		c.DBConfig.DSN = dsn
-	}
-}
-
 func (c *Config) envBuild() error {
 	c.setEnvServerConfig()
 	c.setEnvLoggerConfig()
-	err := c.setEnvRestoreConfig()
+	err := c.setDBConfig()
 	if err != nil {
 		return fmt.Errorf("build env config error: %w", err)
 	}
-	c.setDBConfig()
 	return nil
 }

@@ -16,6 +16,7 @@ type Repositorie interface {
 	UpdateMetric(metric.Metric) (metric.Metric, error)
 	GetAllMetrics() ([][2]string, error)
 	GetMetricValue(name, typeMetric string) (metric.Metric, error)
+	Ping() (bool, error)
 }
 
 type RepositorieHandler struct {

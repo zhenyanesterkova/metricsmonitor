@@ -31,10 +31,10 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - 8080:8080
+      - 8085:8085
     environment:
-      ADDRESS: "0.0.0.0:8080"
-      DATABASE_DSN: "postgresql://gopher:gopher@postgres:5432/gopher_corp"
+      ADDRESS: "0.0.0.0:8085"
+      DATABASE_DSN: "postgres://gopher:gopher@postgres:5432/postgres?sslmode=disable"
     networks:
       - metricsmonitor
     restart: always

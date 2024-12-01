@@ -1,1 +1,197 @@
 package postgres
+
+import (
+	"context"
+	"embed"
+	"errors"
+	"fmt"
+	"strconv"
+
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
+)
+
+type PostgresStorage struct {
+	pool *pgxpool.Pool
+}
+
+func New(dsn string) (*PostgresStorage, error) {
+	if err := runMigrations(dsn); err != nil {
+		return nil, fmt.Errorf("failed to run DB migrations: %w", err)
+	}
+	pool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a connection pool: %w", err)
+	}
+	return &PostgresStorage{
+		pool: pool,
+	}, nil
+}
+
+//go:embed migrations/*.sql
+var migrationsDir embed.FS
+
+func runMigrations(dsn string) error {
+	d, err := iofs.New(migrationsDir, "migrations")
+	if err != nil {
+		return fmt.Errorf("failed to return an iofs driver: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", d, dsn)
+	if err != nil {
+		return fmt.Errorf("failed to get a new migrate instance: %w", err)
+	}
+	if err := m.Up(); err != nil {
+		if !errors.Is(err, migrate.ErrNoChange) {
+			return fmt.Errorf("failed to apply migrations to the DB: %w", err)
+		}
+	}
+	return nil
+}
+
+func (psg *PostgresStorage) Ping() (bool, error) {
+	if err := psg.pool.Ping(context.TODO()); err != nil {
+		return false, fmt.Errorf("failed to ping the DB: %w", err)
+	}
+
+	return true, nil
+}
+
+func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error) {
+	var updating metric.Metric
+	var row pgx.Row
+	if m.MType == metric.TypeGauge {
+		var id string
+		var gValue float64
+		row = psg.pool.QueryRow(
+			context.TODO(),
+			`INSERT INTO gauges (id, g_value)
+			VALUES ($1, $2)
+			ON CONFLICT (id)
+			DO UPDATE SET g_value = $2
+			RETURNING *;
+			`,
+			m.ID,
+			*m.Value,
+		)
+		err := row.Scan(&id, &gValue)
+		if err != nil {
+			return metric.Metric{}, fmt.Errorf("failed to scan row when update metric: %w", err)
+		}
+		updating = metric.New(metric.TypeGauge)
+		updating.ID = id
+		updating.Value = &gValue
+	} else if m.MType == metric.TypeCounter {
+		var id string
+		var cValue int64
+		row = psg.pool.QueryRow(
+			context.TODO(),
+			`INSERT INTO counters (id, delta)
+			VALUES ($1, $2)
+			ON CONFLICT (id)
+			DO UPDATE SET delta = $2
+			RETURNING *;`,
+			m.ID,
+			*m.Delta,
+		)
+		err := row.Scan(&id, &cValue)
+		if err != nil {
+			return metric.Metric{}, fmt.Errorf("failed to scan row when update metric: %w", err)
+		}
+		updating = metric.New(metric.TypeCounter)
+		updating.ID = id
+		updating.Delta = &cValue
+	}
+	return updating, nil
+}
+
+func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
+	res := make([][2]string, 0)
+
+	rowsGauge, err := psg.pool.Query(
+		context.TODO(),
+		`SELECT id, g_value FROM gauges;`,
+	)
+	if err != nil {
+		return res, fmt.Errorf("failed to select all metrics from gauges table: %w", err)
+	}
+	defer rowsGauge.Close()
+
+	var id string
+	var gVal float64
+	for rowsGauge.Next() {
+		if err := rowsGauge.Scan(&id, &gVal); err != nil {
+			return res, fmt.Errorf("failed to scan gauge metric when get all metrics: %w", err)
+		}
+		res = append(res, [2]string{id, strconv.FormatFloat(gVal, 'g', -1, 64)})
+	}
+
+	rowsCounter, err := psg.pool.Query(
+		context.TODO(),
+		`SELECT id, delta FROM counters;`,
+	)
+	if err != nil {
+		return res, fmt.Errorf("failed to select all metrics from counters table: %w", err)
+	}
+	defer rowsCounter.Close()
+
+	var cVal int64
+	for rowsCounter.Next() {
+		if err := rowsCounter.Scan(&id, &cVal); err != nil {
+			return res, fmt.Errorf("failed to scan counter metric when get all metrics: %w", err)
+		}
+		res = append(res, [2]string{id, strconv.FormatInt(cVal, 10)})
+	}
+
+	return res, nil
+}
+
+func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metric, error) {
+	var resMetric metric.Metric
+	var row pgx.Row
+	if typeMetric == metric.TypeGauge {
+		var id string
+		var gValue float64
+		row = psg.pool.QueryRow(
+			context.TODO(),
+			`SELECT id, g_value FROM gauges
+			WHERE id = $1;
+			`,
+			name,
+		)
+		err := row.Scan(&id, &gValue)
+		if err != nil {
+			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
+		}
+		resMetric = metric.New(metric.TypeGauge)
+		resMetric.ID = id
+		resMetric.Value = &gValue
+	} else if typeMetric == metric.TypeCounter {
+		var id string
+		var cValue int64
+		row = psg.pool.QueryRow(
+			context.TODO(),
+			`SELECT id, delta FROM counters
+			WHERE id = $1`,
+			name,
+		)
+		err := row.Scan(&id, &cValue)
+		if err != nil {
+			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
+		}
+		resMetric = metric.New(metric.TypeCounter)
+		resMetric.ID = id
+		resMetric.Delta = &cValue
+	}
+	return resMetric, nil
+}
+
+func (psg *PostgresStorage) Close() error {
+	psg.pool.Close()
+	return nil
+}

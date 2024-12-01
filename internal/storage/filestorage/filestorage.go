@@ -18,7 +18,7 @@ type FileStorage struct {
 	log logger.LogrusLogger
 }
 
-func New(conf config.RestoreConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
+func New(conf config.DataBaseConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
 	fileWriter, err := rwfile.NewFileWriter(conf.FileStoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("file writer error: %w", err)
@@ -119,4 +119,18 @@ func (fs *FileStorage) startSaveStorage(storeInterval time.Duration) error {
 		fs.log.LogrusLog.Info("end storage copying...")
 	}
 	return nil
+}
+
+func (fs *FileStorage) Ping() (bool, error) {
+	if fs.MemStorage == nil {
+		return false, fmt.Errorf("filestorage is not initialized")
+	}
+	pingMemStorage, err := fs.MemStorage.Ping()
+	if err != nil || !pingMemStorage {
+		return false, fmt.Errorf("memstorage in filestorage is not initialized: %w", err)
+	}
+	if fs.r == nil || fs.w == nil {
+		return false, fmt.Errorf("reader or writer in filestorage is not initialized: %w", err)
+	}
+	return true, nil
 }
