@@ -15,16 +15,25 @@ func (c *Config) setFlagsVariables() error {
 	var tempDur int
 	flag.IntVar(&tempDur, "i", DefaultStoreInterval, "store interval")
 
-	flag.StringVar(&c.RConfig.FileStoragePath, "f", c.RConfig.FileStoragePath, "file storage path")
-	flag.BoolVar(&c.RConfig.Restore, "r", c.RConfig.Restore, "need restore")
+	flag.StringVar(&c.DBConfig.FileStoragePath, "f", c.DBConfig.FileStoragePath, "file storage path")
+	flag.BoolVar(&c.DBConfig.Restore, "r", c.DBConfig.Restore, "need restore")
+	flag.StringVar(&c.DBConfig.DSN, "d", c.DBConfig.DSN, "database dsn")
 	flag.Parse()
+
+	if isFlagPassed("f") || isFlagPassed("r") {
+		c.DBConfig.DBType = FileStorageType
+	}
+
+	if isFlagPassed("d") {
+		c.DBConfig.DBType = PostgresStorageType
+	}
 
 	if isFlagPassed("i") {
 		dur, err := time.ParseDuration(strconv.Itoa(tempDur) + "s")
 		if err != nil {
 			return errors.New("can not parse store interval as duration " + err.Error())
 		}
-		c.RConfig.StoreInterval = dur
+		c.DBConfig.StoreInterval = dur
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
@@ -91,4 +92,29 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	log := rh.Logger.LogrusLog
+	poolCfg, err := pgxpool.ParseConfig(rh.DSN)
+	if err != nil {
+		log.Errorf("failed to parse the DSN: %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
+		return
+	}
+
+	pool, err := pgxpool.NewWithConfig(r.Context(), poolCfg)
+	if err != nil {
+		log.Errorf("failed to initialize a connection pool: %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
+		return
+	}
+
+	if err := pool.Ping(r.Context()); err != nil {
+		log.Errorf("failed to ping the DB: %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

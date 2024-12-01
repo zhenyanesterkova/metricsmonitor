@@ -6,9 +6,9 @@ import (
 )
 
 type Config struct {
-	SConfig ServerConfig
-	LConfig LoggerConfig
-	RConfig RestoreConfig
+	SConfig  ServerConfig
+	LConfig  LoggerConfig
+	DBConfig DataBaseConfig
 }
 
 func New() *Config {
@@ -19,10 +19,11 @@ func New() *Config {
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,
 		},
-		RConfig: RestoreConfig{
+		DBConfig: DataBaseConfig{
 			FileStoragePath: DefaultFileStoragePath,
 			Restore:         DefaultRestore,
 			StoreInterval:   DefaultStoreInterval * time.Second,
+			DBType:          MemStorageType,
 		},
 	}
 }

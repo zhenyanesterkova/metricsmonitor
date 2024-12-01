@@ -37,7 +37,7 @@ func run() error {
 		return fmt.Errorf("parse log level error: %w", err)
 	}
 
-	store, err := storage.NewStore(cfg.RConfig, loggerInst)
+	store, err := storage.NewStore(cfg.DBConfig, loggerInst)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("can not create storage: %v", err)
 		return fmt.Errorf("can not create storage: %w", err)
@@ -52,7 +52,7 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(store, loggerInst)
+	repoHandler := handler.NewRepositorieHandler(store, loggerInst, cfg.DBConfig.DSN)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)

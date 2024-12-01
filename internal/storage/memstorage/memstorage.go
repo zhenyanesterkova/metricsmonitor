@@ -79,3 +79,10 @@ func (s *MemStorage) RestoreMemento(m *Memento) {
 func (s *MemStorage) Close() error {
 	return nil
 }
+
+func (s *MemStorage) Ping() (bool, error) {
+	if s.metrics != nil {
+		return true, nil
+	}
+	return false, nil
+}
