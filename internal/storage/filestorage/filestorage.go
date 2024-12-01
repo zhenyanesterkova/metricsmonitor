@@ -2,6 +2,7 @@ package filestorage
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -123,7 +124,7 @@ func (fs *FileStorage) startSaveStorage(storeInterval time.Duration) error {
 
 func (fs *FileStorage) Ping() (bool, error) {
 	if fs.MemStorage == nil {
-		return false, fmt.Errorf("filestorage is not initialized")
+		return false, errors.New("filestorage is not initialized")
 	}
 	pingMemStorage, err := fs.MemStorage.Ping()
 	if err != nil || !pingMemStorage {

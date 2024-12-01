@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
@@ -36,6 +37,6 @@ func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error
 		}
 		return store, nil
 	default:
-		return nil, fmt.Errorf("failed create storage: unknown storage type")
+		return nil, errors.New("failed create storage: unknown storage type")
 	}
 }

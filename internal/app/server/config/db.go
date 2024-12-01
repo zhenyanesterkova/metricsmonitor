@@ -14,7 +14,7 @@ const (
 type DataBaseConfig struct {
 	DSN             string
 	FileStoragePath string
+	DBType          string
 	StoreInterval   time.Duration
 	Restore         bool
-	DBType          string
 }
