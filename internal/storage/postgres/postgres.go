@@ -98,7 +98,7 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 			`INSERT INTO counters (id, delta)
 			VALUES ($1, $2)
 			ON CONFLICT (id)
-			DO UPDATE SET delta = $2
+			DO UPDATE SET delta = delta + $2
 			RETURNING *;`,
 			m.ID,
 			*m.Delta,
@@ -144,7 +144,7 @@ func (psg *PostgresStorage) UpdateManyMetrics(ctx context.Context, mList []metri
 				`INSERT INTO counters (id, delta) 
 				VALUES($1, $2)
 				ON CONFLICT (id)
-				DO UPDATE SET delta = $2;`,
+				DO UPDATE SET delta = delta + $2;`,
 				m.ID,
 				*m.Delta,
 			)
@@ -233,6 +233,9 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 		)
 		err := row.Scan(&id, &gValue)
 		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return metric.Metric{}, metric.ErrUnknownMetric
+			}
 			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
 		}
 		resMetric = metric.New(metric.TypeGauge)
@@ -249,6 +252,9 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 		)
 		err := row.Scan(&id, &cValue)
 		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return metric.Metric{}, metric.ErrUnknownMetric
+			}
 			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
 		}
 		resMetric = metric.New(metric.TypeCounter)
