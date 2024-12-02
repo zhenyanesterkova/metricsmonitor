@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -18,12 +19,13 @@ type Store interface {
 	GetMetricValue(name, typeMetric string) (metric.Metric, error)
 	Close() error
 	Ping() (bool, error)
+	UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error
 }
 
 func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error) {
 	switch conf.DBType {
 	case config.PostgresStorageType:
-		store, err := postgres.New(conf.DSN)
+		store, err := postgres.New(conf.DSN, log)
 		if err != nil {
 			return nil, fmt.Errorf("failed create postgres storage: %w", err)
 		}

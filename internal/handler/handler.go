@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
@@ -17,6 +19,7 @@ type Repositorie interface {
 	GetAllMetrics() ([][2]string, error)
 	GetMetricValue(name, typeMetric string) (metric.Metric, error)
 	Ping() (bool, error)
+	UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error
 }
 
 type RepositorieHandler struct {
@@ -45,6 +48,9 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 			r.Get("/{typeMetric}/{nameMetric}", rh.GetMetricValue)
 		})
 
+		r.Route("/updates/", func(r chi.Router) {
+			r.Post("/", rh.UpdateManyMetrics)
+		})
 		r.Route("/update/", func(r chi.Router) {
 			r.Post("/", rh.UpdateMetricJSON)
 			r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)

@@ -12,15 +12,18 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sirupsen/logrus"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 )
 
 type PostgresStorage struct {
 	pool *pgxpool.Pool
+	log  logger.LogrusLogger
 }
 
-func New(dsn string) (*PostgresStorage, error) {
+func New(dsn string, lg logger.LogrusLogger) (*PostgresStorage, error) {
 	if err := runMigrations(dsn); err != nil {
 		return nil, fmt.Errorf("failed to run DB migrations: %w", err)
 	}
@@ -30,6 +33,7 @@ func New(dsn string) (*PostgresStorage, error) {
 	}
 	return &PostgresStorage{
 		pool: pool,
+		log:  lg,
 	}, nil
 }
 
@@ -108,6 +112,69 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 		updating.Delta = &cValue
 	}
 	return updating, nil
+}
+
+func (psg *PostgresStorage) UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error {
+	log := psg.log.LogrusLog
+	tx, err := psg.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed start a transaction: %w", err)
+	}
+
+	defer func() {
+		err := tx.Rollback(ctx)
+		if err != nil {
+			if !errors.Is(err, pgx.ErrTxClosed) {
+				log.Errorf("failed rolls back the transaction: %v", err)
+			}
+		}
+	}()
+
+	log.Info("updating metrics ...")
+
+	for _, m := range mList {
+		switch m.MType {
+		case metric.TypeCounter:
+			log.WithFields(logrus.Fields{
+				"ID":    m.ID,
+				"Type":  m.MType,
+				"Delta": *m.Delta,
+			}).Info("metric for updating")
+			_, err = tx.Exec(ctx,
+				`INSERT INTO counters (id, delta) 
+				VALUES($1, $2)
+				ON CONFLICT (id)
+				DO UPDATE SET delta = $2;`,
+				m.ID,
+				*m.Delta,
+			)
+		case metric.TypeGauge:
+			log.WithFields(logrus.Fields{
+				"ID":    m.ID,
+				"Type":  m.MType,
+				"Value": *m.Value,
+			}).Info("metric for updating")
+			_, err = tx.Exec(ctx,
+				`INSERT INTO gauges (id, g_value) 
+				VALUES($1, $2)
+				ON CONFLICT (id)
+				DO UPDATE SET g_value = $2;`,
+				m.ID,
+				*m.Value,
+			)
+		default:
+			return errors.New("failed update metrics: unknown metric type")
+		}
+		if err != nil {
+			return fmt.Errorf("failed exec query update metric: %w", err)
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("failed commits the transaction update metrics: %w", err)
+	}
+	return nil
 }
 
 func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
