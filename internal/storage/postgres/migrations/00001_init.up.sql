@@ -7,7 +7,7 @@ CREATE TABLE gauges(
 
 CREATE TABLE counters(
     id VARCHAR(200) UNIQUE NOT NULL PRIMARY KEY,
-    delta INT NOT NULL
+    delta BIGINT NOT NULL
 );
 
 COMMIT;
