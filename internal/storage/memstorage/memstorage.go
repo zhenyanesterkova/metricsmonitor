@@ -1,6 +1,9 @@
 package memstorage
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 )
 
@@ -68,6 +71,16 @@ func (s *MemStorage) UpdateMetric(newMetric metric.Metric) (metric.Metric, error
 	return curMetric, nil
 }
 
+func (s *MemStorage) UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error {
+	for _, m := range mList {
+		_, err := s.UpdateMetric(m)
+		if err != nil {
+			return fmt.Errorf("failed update metric: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *MemStorage) CreateMemento() *Memento {
 	return &Memento{Metrics: s.metrics}
 }
@@ -78,4 +91,11 @@ func (s *MemStorage) RestoreMemento(m *Memento) {
 
 func (s *MemStorage) Close() error {
 	return nil
+}
+
+func (s *MemStorage) Ping() (bool, error) {
+	if s.metrics != nil {
+		return true, nil
+	}
+	return false, nil
 }

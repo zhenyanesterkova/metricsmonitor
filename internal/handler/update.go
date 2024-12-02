@@ -117,3 +117,25 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 		return
 	}
 }
+
+func (rh *RepositorieHandler) UpdateManyMetrics(w http.ResponseWriter, r *http.Request) {
+	log := rh.Logger.LogrusLog
+
+	metricsList := []metric.Metric{}
+	dec := json.NewDecoder(r.Body)
+
+	if err := dec.Decode(&metricsList); err != nil {
+		log.Errorf("handler func UpdateManyMetrics(): error decode metrics - %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
+		return
+	}
+
+	err := rh.Repo.UpdateManyMetrics(r.Context(), metricsList)
+	if err != nil {
+		log.Errorf("handler func UpdateManyMetrics(): error update metrics: %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
