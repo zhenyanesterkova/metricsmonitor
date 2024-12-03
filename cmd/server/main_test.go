@@ -75,15 +75,19 @@ func TestRouter(t *testing.T) {
 		{"testGauge", "2.5"},
 	})
 
+	cfg := config.New()
+	err := cfg.Build()
+	require.NoError(t, err)
+
 	memStorage := CreateTestMemStorage()
 
 	loggerInst := logger.NewLogrusLogger()
-	err := loggerInst.SetLevelForLog("debug")
+	err = loggerInst.SetLevelForLog("debug")
 	require.NoError(t, err)
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, "", config.RetryConfig{})
+	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, "", cfg.RetConfig)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)
