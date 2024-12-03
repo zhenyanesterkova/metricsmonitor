@@ -96,23 +96,17 @@ func (fs *FileStorage) Close() error {
 }
 
 func (fs *FileStorage) readStorage() error {
-	err := fs.retrier.Run(context.TODO(), func() error {
-		if !fs.r.Reader.Scan() {
-			if fs.r.Reader.Err() != nil {
-				return fmt.Errorf("failed read from file: %w", fs.r.Reader.Err())
-			}
-			return nil
+	if !fs.r.Reader.Scan() {
+		if fs.r.Reader.Err() != nil {
+			return fmt.Errorf("failed read from file: %w", fs.r.Reader.Err())
 		}
 		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("error read storage from file: %w", fs.r.Reader.Err())
 	}
 
 	data := fs.r.Reader.Bytes()
 
 	memento := fs.MemStorage.CreateMemento()
-	err = json.Unmarshal(data, memento)
+	err := json.Unmarshal(data, memento)
 	if err != nil {
 		return fmt.Errorf("rwfile: func ReadSnapStorage() - %w", err)
 	}
