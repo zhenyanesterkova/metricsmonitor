@@ -14,11 +14,10 @@ import (
 )
 
 type Sender struct {
-	Report                  ReportData
-	Client                  *http.Client
-	Endpoint                string
-	RequestAttemptIntervals []string
-	ReportInterval          time.Duration
+	Report         ReportData
+	Client         *http.Client
+	Endpoint       string
+	ReportInterval time.Duration
 }
 
 type ReportData struct {
@@ -114,47 +113,16 @@ func (s Sender) SendQueryUpdateMetrics() error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 
-	log.Printf("send request ...")
 	resp, err := s.Client.Do(req)
-	defer func(err error) {
-		if err == nil {
-			errBodyClose := resp.Body.Close()
-			if errBodyClose != nil {
-				log.Fatalf("sender.go func SendQueryUpdateMetrics(): error close body - %v", errBodyClose)
-			}
-		}
-	}(err)
 	if err != nil {
-		reqSuccess := false
-		log.Printf("send failed ...")
-		for i, interval := range s.RequestAttemptIntervals {
-			log.Printf("re-send № %d", i+1)
-			dur, errParse := time.ParseDuration(interval)
-			if errParse != nil {
-				return fmt.Errorf(`failed send statistic to server: %w;
-				the attempt to re-send № %d failed: 
-				the interval could not be parsed: %w`,
-					err,
-					i+1,
-					errParse,
-				)
-			}
-			time.Sleep(dur)
-			resp, err = s.Client.Do(req)
-			if err == nil {
-				reqSuccess = true
-				break
-			}
-			log.Printf("send failed ...")
-		}
-		if !reqSuccess {
-			return fmt.Errorf(`failed send statistic to server: %w,
-			all attempts to re-send failed`,
-				err,
-			)
-		}
+		return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): error do request - %w", err)
 	}
-	log.Printf("send successfully ...")
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): error close body - %w", err)
+	}
+
 	return nil
 }
 

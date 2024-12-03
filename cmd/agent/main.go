@@ -34,11 +34,6 @@ func main() {
 			MetricsBuf: metrics,
 			WGroup:     &wg,
 		},
-		RequestAttemptIntervals: []string{
-			"1s",
-			"3s",
-			"5s",
-		},
 	}
 
 	go stats.UpdateStatistic()
