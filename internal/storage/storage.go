@@ -22,7 +22,7 @@ type Store interface {
 	UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error
 }
 
-func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error) {
+func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger, retCfg config.RetryConfig) (Store, error) {
 	switch conf.DBType {
 	case config.PostgresStorageType:
 		store, err := postgres.New(conf.DSN, log)
@@ -33,7 +33,7 @@ func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error
 	case config.MemStorageType:
 		return memstorage.New(), nil
 	case config.FileStorageType:
-		store, err := filestorage.New(conf, log)
+		store, err := filestorage.New(conf, log, retCfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed create file storage: %w", err)
 		}

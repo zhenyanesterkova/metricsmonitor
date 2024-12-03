@@ -5,8 +5,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/retry"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/middleware"
 )
 
@@ -23,16 +25,23 @@ type Repositorie interface {
 }
 
 type RepositorieHandler struct {
-	Repo   Repositorie
-	Logger logger.LogrusLogger
-	DSN    string
+	Repo    Repositorie
+	retrier retry.Retrier
+	Logger  logger.LogrusLogger
+	DSN     string
 }
 
-func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger, dsn string) *RepositorieHandler {
+func NewRepositorieHandler(
+	rep Repositorie,
+	log logger.LogrusLogger,
+	dsn string, retCfg config.RetryConfig,
+) *RepositorieHandler {
+	b := retry.NewBackoff(retCfg.Min, retCfg.Max, retCfg.MaxAttempt, nil)
 	return &RepositorieHandler{
-		Repo:   rep,
-		Logger: log,
-		DSN:    dsn,
+		Repo:    rep,
+		Logger:  log,
+		DSN:     dsn,
+		retrier: retry.NewRetrier(b, nil),
 	}
 }
 

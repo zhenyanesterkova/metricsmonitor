@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"text/template"
 
@@ -15,7 +16,16 @@ import (
 func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
 
-	res, err := rh.Repo.GetAllMetrics()
+	var res [][2]string
+	err := rh.retrier.Run(r.Context(), func() error {
+		var err error
+		res, err = rh.Repo.GetAllMetrics()
+		if err != nil {
+			return fmt.Errorf("failed get metrics: %w", err)
+		}
+		return nil
+	})
+
 	if err != nil {
 		log.Errorf("handler func GetAllMetrics(): error get metrics - %v", err)
 		http.Error(w, TextServerError, http.StatusInternalServerError)
@@ -45,7 +55,16 @@ func (rh *RepositorieHandler) GetMetricValue(w http.ResponseWriter, r *http.Requ
 	name := chi.URLParam(r, "nameMetric")
 	metricType := chi.URLParam(r, "typeMetric")
 
-	res, err := rh.Repo.GetMetricValue(name, metricType)
+	var res metric.Metric
+	err := rh.retrier.Run(r.Context(), func() error {
+		var err error
+		res, err = rh.Repo.GetMetricValue(name, metricType)
+		if err != nil {
+			return fmt.Errorf("failed get metric: %w", err)
+		}
+		return nil
+	})
+
 	if err != nil {
 		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
 			w.WriteHeader(http.StatusNotFound)
@@ -71,7 +90,15 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 		return
 	}
 
-	res, err := rh.Repo.GetMetricValue(metrica.ID, metrica.MType)
+	var res metric.Metric
+	err := rh.retrier.Run(r.Context(), func() error {
+		var err error
+		res, err = rh.Repo.GetMetricValue(metrica.ID, metrica.MType)
+		if err != nil {
+			return fmt.Errorf("failed get metrics: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
 		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
 			w.WriteHeader(http.StatusNotFound)
@@ -95,7 +122,16 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 
 func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
-	ok, err := rh.Repo.Ping()
+
+	var ok bool
+	err := rh.retrier.Run(r.Context(), func() error {
+		var err error
+		ok, err = rh.Repo.Ping()
+		if err != nil {
+			return fmt.Errorf("failed ping db: %w", err)
+		}
+		return nil
+	})
 	if err != nil || !ok {
 		log.Errorf("failed ping storage: %v", err)
 		http.Error(w, TextServerError, http.StatusInternalServerError)

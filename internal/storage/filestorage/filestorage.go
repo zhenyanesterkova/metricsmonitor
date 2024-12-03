@@ -1,6 +1,7 @@
 package filestorage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,33 +9,54 @@ import (
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/retry"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/rwfile"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 )
 
 type FileStorage struct {
 	*memstorage.MemStorage
-	w   *rwfile.FileWriter
-	r   *rwfile.FileReader
-	log logger.LogrusLogger
+	w       *rwfile.FileWriter
+	r       *rwfile.FileReader
+	log     logger.LogrusLogger
+	retrier retry.Retrier
 }
 
-func New(conf config.DataBaseConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
-	fileWriter, err := rwfile.NewFileWriter(conf.FileStoragePath)
+func New(conf config.DataBaseConfig, storeLog logger.LogrusLogger, retCfg config.RetryConfig) (*FileStorage, error) {
+	b := retry.NewBackoff(retCfg.Min, retCfg.Max, retCfg.MaxAttempt, nil)
+	fileStore := FileStorage{
+		MemStorage: memstorage.New(),
+		log:        storeLog,
+		retrier:    retry.NewRetrier(b, nil),
+	}
+
+	var fileWriter *rwfile.FileWriter
+	err := fileStore.retrier.Run(context.TODO(), func() error {
+		var err error
+		fileWriter, err = rwfile.NewFileWriter(conf.FileStoragePath)
+		if err != nil {
+			return fmt.Errorf("failed create writer: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("file writer error: %w", err)
 	}
-	fileReader, err := rwfile.NewFileReader(conf.FileStoragePath)
+	fileStore.w = fileWriter
+
+	var fileReader *rwfile.FileReader
+	err = fileStore.retrier.Run(context.TODO(), func() error {
+		var err error
+		fileReader, err = rwfile.NewFileReader(conf.FileStoragePath)
+		if err != nil {
+			return fmt.Errorf("failed create reader: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("file reader error: %w", err)
 	}
-
-	fileStore := FileStorage{
-		MemStorage: memstorage.New(),
-		w:          fileWriter,
-		r:          fileReader,
-		log:        storeLog,
-	}
+	fileStore.r = fileReader
 
 	if conf.Restore {
 		err = fileStore.readStorage()
@@ -74,17 +96,23 @@ func (fs *FileStorage) Close() error {
 }
 
 func (fs *FileStorage) readStorage() error {
-	if !fs.r.Reader.Scan() {
-		if fs.r.Reader.Err() != nil {
-			return fmt.Errorf("error read storage from file: %w", fs.r.Reader.Err())
+	err := fs.retrier.Run(context.TODO(), func() error {
+		if !fs.r.Reader.Scan() {
+			if fs.r.Reader.Err() != nil {
+				return fmt.Errorf("failed read from file: %w", fs.r.Reader.Err())
+			}
+			return nil
 		}
 		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error read storage from file: %w", fs.r.Reader.Err())
 	}
 
 	data := fs.r.Reader.Bytes()
 
 	memento := fs.MemStorage.CreateMemento()
-	err := json.Unmarshal(data, memento)
+	err = json.Unmarshal(data, memento)
 	if err != nil {
 		return fmt.Errorf("rwfile: func ReadSnapStorage() - %w", err)
 	}
@@ -100,7 +128,13 @@ func (fs *FileStorage) writeStorage() error {
 		return fmt.Errorf("marshal storage error: %w", err)
 	}
 
-	_, err = fs.w.File.WriteAt(data, 0)
+	err = fs.retrier.Run(context.TODO(), func() error {
+		_, err := fs.w.File.WriteAt(data, 0)
+		if err != nil {
+			return fmt.Errorf("failed write to file: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("write storage error: %w", err)
 	}

@@ -37,7 +37,7 @@ func run() error {
 		return fmt.Errorf("parse log level error: %w", err)
 	}
 
-	store, err := storage.NewStore(cfg.DBConfig, loggerInst)
+	store, err := storage.NewStore(cfg.DBConfig, loggerInst, cfg.RetConfig)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("can not create storage: %v", err)
 		return fmt.Errorf("can not create storage: %w", err)
@@ -52,13 +52,12 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(store, loggerInst, cfg.DBConfig.DSN)
+	repoHandler := handler.NewRepositorieHandler(store, loggerInst, cfg.DBConfig.DSN, cfg.RetConfig)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 
-	loggerInst.LogrusLog.Debugf("Start Server on %s", cfg.SConfig.Address)
 	loggerInst.LogrusLog.Infof("Start Server on %s", cfg.SConfig.Address)
 	go func() {
 		if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {

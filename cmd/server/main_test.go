@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
@@ -82,7 +83,7 @@ func TestRouter(t *testing.T) {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, "")
+	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, "", config.RetryConfig{})
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)
