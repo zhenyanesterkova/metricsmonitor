@@ -33,7 +33,7 @@ func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger, retCfg config
 	case config.MemStorageType:
 		return memstorage.New(), nil
 	case config.FileStorageType:
-		store, err := filestorage.New(conf, log, retCfg)
+		store, err := filestorage.New(conf, log)
 		if err != nil {
 			return nil, fmt.Errorf("failed create file storage: %w", err)
 		}
