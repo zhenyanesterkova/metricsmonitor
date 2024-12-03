@@ -3,7 +3,7 @@ package config
 import "time"
 
 const (
-	DefaultMinDelay   = time.Second
+	DefaultMinDelay   = 1 * time.Second
 	DefaultMaxDelay   = 5 * time.Second
 	DefaultMaxAttempt = 4
 )

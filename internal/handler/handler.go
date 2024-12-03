@@ -36,7 +36,7 @@ func NewRepositorieHandler(
 	log logger.LogrusLogger,
 	dsn string, retCfg config.RetryConfig,
 ) *RepositorieHandler {
-	b := retry.NewBackoff(retCfg.Min, retCfg.Max, retCfg.MaxAttempt, nil)
+	b := retry.NewBackoff(retCfg.Min, retCfg.Max, retCfg.MaxAttempt)
 	return &RepositorieHandler{
 		Repo:    rep,
 		Logger:  log,

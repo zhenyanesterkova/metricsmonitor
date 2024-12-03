@@ -5,28 +5,23 @@ import (
 )
 
 const (
-	DefaultDurFactor = 2 * time.Second
+	DefaultStep = 2
 )
 
-type FnBackoff func(attemptNum int, min, max time.Duration) time.Duration
-
 type Backoff struct {
-	backoff    FnBackoff
 	min        time.Duration
 	max        time.Duration
 	maxAttempt int
 	attemptNum int
+	nextDelay  time.Duration
 }
 
-func NewBackoff(min, max time.Duration, maxAttempt int, backoff FnBackoff) *Backoff {
-	if backoff == nil {
-		backoff = LinerBackoff(DefaultDurFactor)
-	}
+func NewBackoff(min, max time.Duration, maxAttempt int) *Backoff {
 	return &Backoff{
 		min:        min,
 		max:        max,
 		maxAttempt: maxAttempt,
-		backoff:    backoff,
+		nextDelay:  min,
 	}
 }
 
@@ -37,22 +32,12 @@ func (b *Backoff) Next() time.Duration {
 		return Stop
 	}
 	b.attemptNum++
-	return b.backoff(b.attemptNum, b.min, b.max)
+	delay := min(b.nextDelay, b.max)
+	b.nextDelay += DefaultStep * time.Second
+	return delay
 }
 
 func (b *Backoff) Reset() {
 	b.attemptNum = 0
-}
-
-func LinerBackoff(factor time.Duration) FnBackoff {
-	return func(attemptNum int, min, max time.Duration) time.Duration {
-		delay := factor*time.Duration(attemptNum) - 1
-		if delay < min {
-			delay = min
-		}
-		if delay > max {
-			delay = max
-		}
-		return delay
-	}
+	b.nextDelay = b.min
 }

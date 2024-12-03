@@ -2,7 +2,6 @@ package retry
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -45,20 +44,8 @@ func (r Retrier) Run(ctx context.Context, work func() error) error {
 			if delay = r.backoff.Next(); delay == Stop {
 				return err
 			}
-			timeout := time.After(delay)
-			if err := r.sleep(ctx, timeout); err != nil {
-				return err
-			}
+			time.Sleep(delay)
 		}
-	}
-}
-
-func (r *Retrier) sleep(ctx context.Context, t <-chan time.Time) error {
-	select {
-	case <-t:
-		return nil
-	case <-ctx.Done():
-		return fmt.Errorf("context close: %w", ctx.Err())
 	}
 }
 

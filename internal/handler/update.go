@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -51,13 +50,7 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 		}).Info("counter metric updating")
 	}
 
-	err := rh.retrier.Run(r.Context(), func() error {
-		_, err := rh.Repo.UpdateMetric(metrica)
-		if err != nil {
-			return fmt.Errorf("failed update metric: %w", err)
-		}
-		return nil
-	})
+	_, err := rh.Repo.UpdateMetric(metrica)
 	if err != nil {
 		switch {
 		case errors.Is(err, metric.ErrInvalidName):
@@ -97,15 +90,7 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 		"Delta": *newMetric.Delta,
 	}).Info("metric for updating")
 
-	var updating metric.Metric
-	err := rh.retrier.Run(r.Context(), func() error {
-		var err error
-		updating, err = rh.Repo.UpdateMetric(newMetric)
-		if err != nil {
-			return fmt.Errorf("failed update metric: %w", err)
-		}
-		return nil
-	})
+	updating, err := rh.Repo.UpdateMetric(newMetric)
 	if err != nil {
 		switch {
 		case errors.Is(err, metric.ErrInvalidName):
@@ -145,13 +130,7 @@ func (rh *RepositorieHandler) UpdateManyMetrics(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err := rh.retrier.Run(r.Context(), func() error {
-		err := rh.Repo.UpdateManyMetrics(r.Context(), metricsList)
-		if err != nil {
-			return fmt.Errorf("failed update metrics: %w", err)
-		}
-		return nil
-	})
+	err := rh.Repo.UpdateManyMetrics(r.Context(), metricsList)
 	if err != nil {
 		log.Errorf("handler func UpdateManyMetrics(): error update metrics: %v", err)
 		http.Error(w, TextServerError, http.StatusInternalServerError)

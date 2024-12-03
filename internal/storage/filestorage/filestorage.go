@@ -23,7 +23,7 @@ type FileStorage struct {
 }
 
 func New(conf config.DataBaseConfig, storeLog logger.LogrusLogger, retCfg config.RetryConfig) (*FileStorage, error) {
-	b := retry.NewBackoff(retCfg.Min, retCfg.Max, retCfg.MaxAttempt, nil)
+	b := retry.NewBackoff(retCfg.Min, retCfg.Max, retCfg.MaxAttempt)
 	fileStore := FileStorage{
 		MemStorage: memstorage.New(),
 		log:        storeLog,
