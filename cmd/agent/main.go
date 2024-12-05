@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"sync"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
@@ -21,25 +20,8 @@ func main() {
 	}
 
 	metrics := metric.NewMetricBuf()
-	stats := statistic.Statistic{
-		PollInterval: cfg.PollInterval,
-		WGroup:       &wg,
-		MetricsBuf:   metrics,
-	}
-	senderStat := sender.Sender{
-		Client:         &http.Client{},
-		Endpoint:       cfg.Address,
-		ReportInterval: cfg.ReportInterval,
-		Report: sender.ReportData{
-			MetricsBuf: metrics,
-			WGroup:     &wg,
-		},
-		RequestAttemptIntervals: []string{
-			"1s",
-			"3s",
-			"5s",
-		},
-	}
+	stats := statistic.New(&wg, metrics, cfg.PollInterval)
+	senderStat := sender.New(cfg.Address, cfg.ReportInterval, &wg, metrics)
 
 	go stats.UpdateStatistic()
 	wg.Add(1)

@@ -25,14 +25,12 @@ type Repositorie interface {
 type RepositorieHandler struct {
 	Repo   Repositorie
 	Logger logger.LogrusLogger
-	DSN    string
 }
 
-func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger, dsn string) *RepositorieHandler {
+func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger) *RepositorieHandler {
 	return &RepositorieHandler{
 		Repo:   rep,
 		Logger: log,
-		DSN:    dsn,
 	}
 }
 

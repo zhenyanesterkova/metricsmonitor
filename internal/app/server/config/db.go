@@ -3,18 +3,20 @@ package config
 import "time"
 
 const (
-	DefaultStoreInterval   = 300
-	DefaultFileStoragePath = "storage.txt"
-	DefaultRestore         = true
-	MemStorageType         = "memory"
-	FileStorageType        = "file"
-	PostgresStorageType    = "postgres"
+	DefaultStoreInterval = 300
 )
 
 type DataBaseConfig struct {
-	DSN             string
+	PostgresConfig    *PostgresConfig
+	FileStorageConfig *FileStorageConfig
+}
+
+type PostgresConfig struct {
+	DSN string
+}
+
+type FileStorageConfig struct {
 	FileStoragePath string
-	DBType          string
 	StoreInterval   time.Duration
 	Restore         bool
 }

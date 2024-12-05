@@ -52,13 +52,12 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(store, loggerInst, cfg.DBConfig.DSN)
+	repoHandler := handler.NewRepositorieHandler(store, loggerInst)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 
-	loggerInst.LogrusLog.Debugf("Start Server on %s", cfg.SConfig.Address)
 	loggerInst.LogrusLog.Infof("Start Server on %s", cfg.SConfig.Address)
 	go func() {
 		if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {

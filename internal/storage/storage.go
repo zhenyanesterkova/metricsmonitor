@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
@@ -23,22 +22,21 @@ type Store interface {
 }
 
 func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error) {
-	switch conf.DBType {
-	case config.PostgresStorageType:
-		store, err := postgres.New(conf.DSN, log)
+	if conf.PostgresConfig != nil {
+		store, err := postgres.New(conf.PostgresConfig.DSN, log)
 		if err != nil {
 			return nil, fmt.Errorf("failed create postgres storage: %w", err)
 		}
 		return store, nil
-	case config.MemStorageType:
-		return memstorage.New(), nil
-	case config.FileStorageType:
-		store, err := filestorage.New(conf, log)
+	}
+
+	if conf.FileStorageConfig != nil {
+		store, err := filestorage.New(*conf.FileStorageConfig, log)
 		if err != nil {
 			return nil, fmt.Errorf("failed create file storage: %w", err)
 		}
 		return store, nil
-	default:
-		return nil, errors.New("failed create storage: unknown storage type")
 	}
+
+	return memstorage.New(), nil
 }

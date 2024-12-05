@@ -2,13 +2,12 @@ package config
 
 import (
 	"fmt"
-	"time"
 )
 
 type Config struct {
+	DBConfig DataBaseConfig
 	SConfig  ServerConfig
 	LConfig  LoggerConfig
-	DBConfig DataBaseConfig
 }
 
 func New() *Config {
@@ -19,12 +18,7 @@ func New() *Config {
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,
 		},
-		DBConfig: DataBaseConfig{
-			FileStoragePath: DefaultFileStoragePath,
-			Restore:         DefaultRestore,
-			StoreInterval:   DefaultStoreInterval * time.Second,
-			DBType:          MemStorageType,
-		},
+		DBConfig: DataBaseConfig{},
 	}
 }
 

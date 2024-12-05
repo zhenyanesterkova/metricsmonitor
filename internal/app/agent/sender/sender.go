@@ -14,26 +14,48 @@ import (
 )
 
 type Sender struct {
-	Report                  ReportData
-	Client                  *http.Client
-	Endpoint                string
-	RequestAttemptIntervals []string
-	ReportInterval          time.Duration
+	report                  ReportData
+	client                  *http.Client
+	endpoint                string
+	requestAttemptIntervals []string
+	reportInterval          time.Duration
 }
 
 type ReportData struct {
-	MetricsBuf *metric.MetricBuf
-	WGroup     *sync.WaitGroup
+	metricsBuf *metric.MetricBuf
+	wGroup     *sync.WaitGroup
+}
+
+func New(
+	addr string,
+	reportInt time.Duration,
+	wg *sync.WaitGroup,
+	buff *metric.MetricBuf,
+) Sender {
+	return Sender{
+		client:         &http.Client{},
+		endpoint:       addr,
+		reportInterval: reportInt,
+		report: ReportData{
+			metricsBuf: buff,
+			wGroup:     wg,
+		},
+		requestAttemptIntervals: []string{
+			"1s",
+			"3s",
+			"5s",
+		},
+	}
 }
 
 func (s Sender) SendQueryUpdateMetrics() error {
 	mList := make([]metric.Metric, 0)
-	for _, m := range s.Report.MetricsBuf.Metrics {
+	for _, m := range s.report.metricsBuf.Metrics {
 		mList = append(mList, *m)
 	}
 
 	if len(mList) == 0 {
-		log.Printf("    no data for sending ...")
+		log.Println("    no data for sending ...")
 		return nil
 	}
 
@@ -51,7 +73,7 @@ func (s Sender) SendQueryUpdateMetrics() error {
 		return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): error close gzip.Writer - %w", err)
 	}
 
-	url := fmt.Sprintf("http://%s/updates/", s.Endpoint)
+	url := fmt.Sprintf("http://%s/updates/", s.endpoint)
 
 	log.Printf("new request to url=%s, method=%s", url, http.MethodPost)
 	for _, m := range mList {
@@ -66,8 +88,8 @@ func (s Sender) SendQueryUpdateMetrics() error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 
-	log.Printf("send request ...")
-	resp, err := s.Client.Do(req)
+	log.Println("send request ...")
+	resp, err := s.client.Do(req)
 	defer func(err error) {
 		if err == nil {
 			errBodyClose := resp.Body.Close()
@@ -78,9 +100,7 @@ func (s Sender) SendQueryUpdateMetrics() error {
 	}(err)
 	if err != nil {
 		reqSuccess := false
-		log.Printf("send failed ...")
-		for i, interval := range s.RequestAttemptIntervals {
-			log.Printf("re-send № %d", i+1)
+		for i, interval := range s.requestAttemptIntervals {
 			dur, errParse := time.ParseDuration(interval)
 			if errParse != nil {
 				return fmt.Errorf(`failed send statistic to server: %w;
@@ -92,12 +112,11 @@ func (s Sender) SendQueryUpdateMetrics() error {
 				)
 			}
 			time.Sleep(dur)
-			resp, err = s.Client.Do(req)
+			resp, err = s.client.Do(req)
 			if err == nil {
 				reqSuccess = true
 				break
 			}
-			log.Printf("send failed ...")
 		}
 		if !reqSuccess {
 			return fmt.Errorf(`failed send statistic to server: %w,
@@ -106,22 +125,22 @@ func (s Sender) SendQueryUpdateMetrics() error {
 			)
 		}
 	}
-	log.Printf("send successfully ...")
 	return nil
 }
 
 func (s Sender) SendReport() error {
-	defer s.Report.WGroup.Done()
+	defer s.report.wGroup.Done()
 
-	ticker := time.NewTicker(s.ReportInterval)
+	ticker := time.NewTicker(s.reportInterval)
 	for range ticker.C {
 		log.Println("Start send statistic ...")
 		err := s.SendQueryUpdateMetrics()
 		if err != nil {
 			log.Printf("an error occurred while sending the report to the server %v", err)
+			continue
 		}
 
-		s.Report.MetricsBuf.ResetCountersValues()
+		s.report.metricsBuf.ResetCountersValues()
 		log.Println("End send statistic ...")
 	}
 	return nil

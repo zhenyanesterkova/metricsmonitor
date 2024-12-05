@@ -9,23 +9,59 @@ import (
 )
 
 func (c *Config) setFlagsVariables() error {
-	flag.StringVar(&c.SConfig.Address, "a", c.SConfig.Address, "address and port to run server")
-	flag.StringVar(&c.LConfig.Level, "l", c.LConfig.Level, "log level")
+	flag.StringVar(
+		&c.SConfig.Address,
+		"a",
+		c.SConfig.Address,
+		"address and port to run server",
+	)
+
+	flag.StringVar(
+		&c.LConfig.Level,
+		"l",
+		c.LConfig.Level,
+		"log level",
+	)
 
 	var tempDur int
-	flag.IntVar(&tempDur, "i", DefaultStoreInterval, "store interval")
+	flag.IntVar(
+		&tempDur,
+		"i",
+		DefaultStoreInterval,
+		"store interval",
+	)
 
-	flag.StringVar(&c.DBConfig.FileStoragePath, "f", c.DBConfig.FileStoragePath, "file storage path")
-	flag.BoolVar(&c.DBConfig.Restore, "r", c.DBConfig.Restore, "need restore")
-	flag.StringVar(&c.DBConfig.DSN, "d", c.DBConfig.DSN, "database dsn")
+	fileStoragePath := ""
+	flag.StringVar(
+		&fileStoragePath,
+		"f",
+		fileStoragePath,
+		"file storage path",
+	)
+
+	restore := false
+	flag.BoolVar(
+		&restore,
+		"r",
+		restore,
+		"need restore",
+	)
+
+	dsn := ""
+	flag.StringVar(
+		&dsn,
+		"d",
+		dsn,
+		"database dsn",
+	)
+
 	flag.Parse()
 
-	if isFlagPassed("f") || isFlagPassed("r") {
-		c.DBConfig.DBType = FileStorageType
-	}
-
-	if isFlagPassed("d") {
-		c.DBConfig.DBType = PostgresStorageType
+	if isFlagPassed("f") {
+		if c.DBConfig.FileStorageConfig == nil {
+			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
+		}
+		c.DBConfig.FileStorageConfig.FileStoragePath = fileStoragePath
 	}
 
 	if isFlagPassed("i") {
@@ -33,7 +69,24 @@ func (c *Config) setFlagsVariables() error {
 		if err != nil {
 			return errors.New("can not parse store interval as duration " + err.Error())
 		}
-		c.DBConfig.StoreInterval = dur
+		if c.DBConfig.FileStorageConfig == nil {
+			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
+		}
+		c.DBConfig.FileStorageConfig.StoreInterval = dur
+	}
+
+	if isFlagPassed("r") {
+		if c.DBConfig.FileStorageConfig == nil {
+			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
+		}
+		c.DBConfig.FileStorageConfig.Restore = restore
+	}
+
+	if isFlagPassed("d") {
+		if c.DBConfig.PostgresConfig == nil {
+			c.DBConfig.PostgresConfig = &PostgresConfig{}
+		}
+		c.DBConfig.PostgresConfig.DSN = dsn
 	}
 
 	return nil

@@ -19,7 +19,7 @@ type FileStorage struct {
 	log logger.LogrusLogger
 }
 
-func New(conf config.DataBaseConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
+func New(conf config.FileStorageConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
 	fileWriter, err := rwfile.NewFileWriter(conf.FileStoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("file writer error: %w", err)

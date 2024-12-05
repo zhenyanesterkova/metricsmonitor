@@ -78,7 +78,7 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 			VALUES ($1, $2)
 			ON CONFLICT (id)
 			DO UPDATE SET g_value = $2
-			RETURNING *;
+			RETURNING id, g_value;
 			`,
 			m.ID,
 			*m.Value,
@@ -98,8 +98,8 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 			`INSERT INTO counters (id, delta)
 			VALUES ($1, $2)
 			ON CONFLICT (id)
-			DO UPDATE SET delta = counters.delta + $2
-			RETURNING *;`,
+			DO UPDATE SET delta = counters.delta + EXCLUDED.delta
+			RETURNING id, delta;`,
 			m.ID,
 			*m.Delta,
 		)
