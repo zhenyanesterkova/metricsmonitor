@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"text/template"
 	"time"
@@ -24,7 +25,7 @@ func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Reque
 		if rh.checkRetry(err) {
 			err = rh.retry(func() error {
 				res, err = rh.Repo.GetAllMetrics()
-				return err
+				return fmt.Errorf("failed get all metrics: %w", err)
 			})
 		}
 		if err != nil {
