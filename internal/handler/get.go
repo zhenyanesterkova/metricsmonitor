@@ -5,9 +5,13 @@ import (
 	"errors"
 	"net/http"
 	"text/template"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
 )
@@ -17,9 +21,17 @@ func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Reque
 
 	res, err := rh.Repo.GetAllMetrics()
 	if err != nil {
-		log.Errorf("handler func GetAllMetrics(): error get metrics - %v", err)
-		http.Error(w, TextServerError, http.StatusInternalServerError)
-		return
+		if rh.checkRetry(err) {
+			err = rh.retry(func() error {
+				res, err = rh.Repo.GetAllMetrics()
+				return err
+			})
+		}
+		if err != nil {
+			log.Errorf("handler func GetAllMetrics(): error get metrics - %v", err)
+			http.Error(w, TextServerError, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	tmplMetrics, err := template.ParseFS(web.Templates, "template/allMetricsView.html")
@@ -103,4 +115,34 @@ func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (rh *RepositorieHandler) checkRetry(err error) bool {
+	var pgErr *pgconn.PgError
+	var pgErrConn *pgconn.ConnectError
+	res := false
+	if errors.As(err, &pgErr) {
+		res = pgerrcode.IsConnectionException(pgErr.Code)
+	} else if errors.As(err, &pgErrConn) {
+		res = true
+	}
+	return res
+}
+
+func (rh *RepositorieHandler) retry(work func() error) error {
+	defer rh.backoff.Reset()
+	for {
+		err := work()
+
+		if err == nil {
+			return nil
+		}
+		if rh.checkRetry(err) {
+			var delay time.Duration
+			if delay = rh.backoff.Next(); delay == backoff.Stop {
+				return err
+			}
+			time.Sleep(delay)
+		}
+	}
 }
