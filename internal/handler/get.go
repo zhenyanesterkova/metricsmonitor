@@ -60,13 +60,21 @@ func (rh *RepositorieHandler) GetMetricValue(w http.ResponseWriter, r *http.Requ
 
 	res, err := rh.Repo.GetMetricValue(name, metricType)
 	if err != nil {
-		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
-			w.WriteHeader(http.StatusNotFound)
+		if rh.checkRetry(err) {
+			err = rh.retry(func() error {
+				res, err = rh.Repo.GetMetricValue(name, metricType)
+				return fmt.Errorf("failed get metric value: %w", err)
+			})
+		}
+		if err != nil {
+			if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			log.Errorf("handler func GetMetricValue(): error get metric value - %v", err)
+			http.Error(w, TextServerError, http.StatusInternalServerError)
 			return
 		}
-		log.Errorf("handler func GetMetricValue(): error get metric value - %v", err)
-		http.Error(w, TextServerError, http.StatusInternalServerError)
-		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -86,13 +94,21 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 
 	res, err := rh.Repo.GetMetricValue(metrica.ID, metrica.MType)
 	if err != nil {
-		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
-			w.WriteHeader(http.StatusNotFound)
+		if rh.checkRetry(err) {
+			err = rh.retry(func() error {
+				res, err = rh.Repo.GetMetricValue(metrica.ID, metrica.MType)
+				return fmt.Errorf("failed get metric value: %w", err)
+			})
+		}
+		if err != nil {
+			if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			log.Errorf("handler func GetMetricValueJSON(): error get metric value - %v", err)
+			http.Error(w, TextServerError, http.StatusInternalServerError)
 			return
 		}
-		log.Errorf("handler func GetMetricValueJSON(): error get metric value - %v", err)
-		http.Error(w, TextServerError, http.StatusInternalServerError)
-		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -108,11 +124,20 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 
 func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
+
 	ok, err := rh.Repo.Ping()
-	if err != nil || !ok {
-		log.Errorf("failed ping storage: %v", err)
-		http.Error(w, TextServerError, http.StatusInternalServerError)
-		return
+	if err != nil {
+		if rh.checkRetry(err) {
+			err = rh.retry(func() error {
+				ok, err = rh.Repo.Ping()
+				return fmt.Errorf("error connect to bd: %w", err)
+			})
+		}
+		if err != nil || !ok {
+			log.Errorf("failed ping storage: %v", err)
+			http.Error(w, TextServerError, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
