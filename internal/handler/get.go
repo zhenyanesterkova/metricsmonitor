@@ -7,8 +7,6 @@ import (
 	"text/template"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
@@ -105,13 +103,4 @@ func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (rh *RepositorieHandler) checkRetry(err error) bool {
-	var pgErr *pgconn.PgError
-	res := false
-	if errors.As(err, &pgErr) {
-		res = pgerrcode.IsConnectionException(pgErr.Code)
-	}
-	return res
 }
