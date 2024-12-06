@@ -52,9 +52,9 @@ func run() error {
 	}()
 
 	backoffInst := backoff.New(
-		cfg.DBConfig.PostgresConfig.MinDelay,
-		cfg.DBConfig.PostgresConfig.MaxDelay,
-		cfg.DBConfig.PostgresConfig.MaxAttempt,
+		cfg.RetryConfig.MinDelay,
+		cfg.RetryConfig.MaxDelay,
+		cfg.RetryConfig.MaxAttempt,
 	)
 
 	router := chi.NewRouter()

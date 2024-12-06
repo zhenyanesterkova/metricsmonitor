@@ -6,9 +6,6 @@ const (
 	DefaultStoreInterval   = 300
 	DefaultFileStoragePath = "storage.txt"
 	DefaultRestore         = true
-	DefaultMinRetryDelay   = time.Second
-	DefaultMaxRetryDelay   = 5 * time.Second
-	DefaultMaxRetryAttempt = 3
 )
 
 type DataBaseConfig struct {
@@ -17,10 +14,7 @@ type DataBaseConfig struct {
 }
 
 type PostgresConfig struct {
-	DSN        string
-	MinDelay   time.Duration
-	MaxDelay   time.Duration
-	MaxAttempt int
+	DSN string
 }
 
 type FileStorageConfig struct {

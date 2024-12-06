@@ -6,9 +6,10 @@ import (
 )
 
 type Config struct {
-	DBConfig DataBaseConfig
-	SConfig  ServerConfig
-	LConfig  LoggerConfig
+	DBConfig    DataBaseConfig
+	SConfig     ServerConfig
+	LConfig     LoggerConfig
+	RetryConfig RetryConfig
 }
 
 func New() *Config {
@@ -25,6 +26,11 @@ func New() *Config {
 				StoreInterval:   DefaultStoreInterval * time.Second,
 				Restore:         DefaultRestore,
 			},
+		},
+		RetryConfig: RetryConfig{
+			MinDelay:   DefaultMinRetryDelay,
+			MaxDelay:   DefaultMaxRetryDelay,
+			MaxAttempt: DefaultMaxRetryAttempt,
 		},
 	}
 }
