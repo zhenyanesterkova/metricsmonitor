@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/middleware"
@@ -23,14 +24,20 @@ type Repositorie interface {
 }
 
 type RepositorieHandler struct {
-	Repo   Repositorie
-	Logger logger.LogrusLogger
+	Repo    Repositorie
+	Logger  logger.LogrusLogger
+	backoff *backoff.Backoff
 }
 
-func NewRepositorieHandler(rep Repositorie, log logger.LogrusLogger) *RepositorieHandler {
+func NewRepositorieHandler(
+	rep Repositorie,
+	log logger.LogrusLogger,
+	back *backoff.Backoff,
+) *RepositorieHandler {
 	return &RepositorieHandler{
-		Repo:   rep,
-		Logger: log,
+		Repo:    rep,
+		Logger:  log,
+		backoff: back,
 	}
 }
 

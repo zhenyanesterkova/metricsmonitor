@@ -8,11 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 	"text/template"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
@@ -80,9 +82,15 @@ func TestRouter(t *testing.T) {
 	err := loggerInst.SetLevelForLog("debug")
 	require.NoError(t, err)
 
+	backoffInst := backoff.New(
+		time.Second,
+		5*time.Second,
+		3,
+	)
+
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst)
+	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, backoffInst)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)

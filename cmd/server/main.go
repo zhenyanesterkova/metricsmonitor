@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
@@ -50,9 +51,15 @@ func run() error {
 		}
 	}()
 
+	backoffInst := backoff.New(
+		cfg.DBConfig.PostgresConfig.MinDelay,
+		cfg.DBConfig.PostgresConfig.MaxDelay,
+		cfg.DBConfig.PostgresConfig.MaxAttempt,
+	)
+
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(store, loggerInst)
+	repoHandler := handler.NewRepositorieHandler(store, loggerInst, backoffInst)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)

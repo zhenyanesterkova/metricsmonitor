@@ -45,6 +45,9 @@ func (c *Config) setDBConfig() error {
 		if c.DBConfig.PostgresConfig == nil {
 			c.DBConfig.PostgresConfig = &PostgresConfig{}
 		}
+		c.DBConfig.PostgresConfig.MaxAttempt = DefaultMaxRetryAttempt
+		c.DBConfig.PostgresConfig.MaxDelay = DefaultMaxRetryDelay
+		c.DBConfig.PostgresConfig.MinDelay = DefaultMinRetryDelay
 		c.DBConfig.PostgresConfig.DSN = dsn
 	}
 
