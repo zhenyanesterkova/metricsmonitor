@@ -21,31 +21,22 @@ func (c *Config) setEnvLoggerConfig() {
 }
 
 func (c *Config) setDBConfig() error {
+	if envFileStoragePath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
+		c.DBConfig.FileStorageConfig.FileStoragePath = envFileStoragePath
+	}
+
 	if envStoreInt, ok := os.LookupEnv("STORE_INTERVAL"); ok {
 		dur, err := time.ParseDuration(envStoreInt + "s")
 		if err != nil {
 			return errors.New("can not parse store interval as duration" + err.Error())
 		}
-		if c.DBConfig.FileStorageConfig == nil {
-			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
-		}
 		c.DBConfig.FileStorageConfig.StoreInterval = dur
-	}
-
-	if envFileStoragePath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
-		if c.DBConfig.FileStorageConfig == nil {
-			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
-		}
-		c.DBConfig.FileStorageConfig.FileStoragePath = envFileStoragePath
 	}
 
 	if envRestore, ok := os.LookupEnv("RESTORE"); ok {
 		restore, err := strconv.ParseBool(envRestore)
 		if err != nil {
 			return errors.New("can not parse need store" + err.Error())
-		}
-		if c.DBConfig.FileStorageConfig == nil {
-			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
 		}
 		c.DBConfig.FileStorageConfig.Restore = restore
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/filestorage"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/postgres"
 )
 
@@ -23,6 +22,7 @@ type Store interface {
 
 func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error) {
 	if conf.PostgresConfig != nil {
+		log.LogrusLog.Debugln("create postgres storage")
 		store, err := postgres.New(conf.PostgresConfig.DSN, log)
 		if err != nil {
 			return nil, fmt.Errorf("failed create postgres storage: %w", err)
@@ -30,13 +30,10 @@ func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error
 		return store, nil
 	}
 
-	if conf.FileStorageConfig != nil {
-		store, err := filestorage.New(*conf.FileStorageConfig, log)
-		if err != nil {
-			return nil, fmt.Errorf("failed create file storage: %w", err)
-		}
-		return store, nil
+	log.LogrusLog.Debugln("create file storage")
+	store, err := filestorage.New(*conf.FileStorageConfig, log)
+	if err != nil {
+		return nil, fmt.Errorf("failed create file storage: %w", err)
 	}
-
-	return memstorage.New(), nil
+	return store, nil
 }

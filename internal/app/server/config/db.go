@@ -3,7 +3,9 @@ package config
 import "time"
 
 const (
-	DefaultStoreInterval = 300
+	DefaultStoreInterval   = 300
+	DefaultFileStoragePath = "storage.txt"
+	DefaultRestore         = true
 )
 
 type DataBaseConfig struct {

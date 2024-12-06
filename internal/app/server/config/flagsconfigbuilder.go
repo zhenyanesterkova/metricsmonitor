@@ -58,9 +58,6 @@ func (c *Config) setFlagsVariables() error {
 	flag.Parse()
 
 	if isFlagPassed("f") {
-		if c.DBConfig.FileStorageConfig == nil {
-			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
-		}
 		c.DBConfig.FileStorageConfig.FileStoragePath = fileStoragePath
 	}
 
@@ -69,16 +66,10 @@ func (c *Config) setFlagsVariables() error {
 		if err != nil {
 			return errors.New("can not parse store interval as duration " + err.Error())
 		}
-		if c.DBConfig.FileStorageConfig == nil {
-			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
-		}
 		c.DBConfig.FileStorageConfig.StoreInterval = dur
 	}
 
 	if isFlagPassed("r") {
-		if c.DBConfig.FileStorageConfig == nil {
-			c.DBConfig.FileStorageConfig = &FileStorageConfig{}
-		}
 		c.DBConfig.FileStorageConfig.Restore = restore
 	}
 
