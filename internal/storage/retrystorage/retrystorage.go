@@ -20,13 +20,13 @@ type RetryStorage struct {
 	logger  logger.LogrusLogger
 }
 
-func New(cfg config.DataBaseConfig, loggerInst logger.LogrusLogger, backoff *backoff.Backoff) (*RetryStorage, error) {
+func New(cfg config.DataBaseConfig, loggerInst logger.LogrusLogger, bf *backoff.Backoff) (*RetryStorage, error) {
 	retryStore := &RetryStorage{}
 
 	store, err := storage.NewStore(cfg, loggerInst)
 	if err != nil {
 		if retryStore.checkRetry(err) {
-			retryStore.retry(func() error {
+			err = retryStore.retry(func() error {
 				store, err = storage.NewStore(cfg, loggerInst)
 				if err != nil {
 					return fmt.Errorf("failed retry create storage: %w", err)
@@ -39,7 +39,7 @@ func New(cfg config.DataBaseConfig, loggerInst logger.LogrusLogger, backoff *bac
 	}
 
 	retryStore.storage = store
-	retryStore.backoff = backoff
+	retryStore.backoff = bf
 	retryStore.logger = loggerInst
 	return retryStore, nil
 }
@@ -47,7 +47,7 @@ func New(cfg config.DataBaseConfig, loggerInst logger.LogrusLogger, backoff *bac
 func (rs *RetryStorage) UpdateMetric(m metric.Metric) (metric.Metric, error) {
 	resMetric, err := rs.storage.UpdateMetric(m)
 	if rs.checkRetry(err) {
-		rs.retry(func() error {
+		err = rs.retry(func() error {
 			resMetric, err = rs.storage.UpdateMetric(m)
 			if err != nil {
 				return fmt.Errorf("failed retry update metric: %w", err)
@@ -64,7 +64,7 @@ func (rs *RetryStorage) UpdateMetric(m metric.Metric) (metric.Metric, error) {
 func (rs *RetryStorage) GetAllMetrics() ([][2]string, error) {
 	resMetricList, err := rs.storage.GetAllMetrics()
 	if rs.checkRetry(err) {
-		rs.retry(func() error {
+		err = rs.retry(func() error {
 			resMetricList, err = rs.storage.GetAllMetrics()
 			if err != nil {
 				return fmt.Errorf("failed retry get metrics list: %w", err)
@@ -81,7 +81,7 @@ func (rs *RetryStorage) GetAllMetrics() ([][2]string, error) {
 func (rs *RetryStorage) GetMetricValue(name, typeMetric string) (metric.Metric, error) {
 	resMetric, err := rs.storage.GetMetricValue(name, typeMetric)
 	if rs.checkRetry(err) {
-		rs.retry(func() error {
+		err = rs.retry(func() error {
 			resMetric, err = rs.storage.GetMetricValue(name, typeMetric)
 			if err != nil {
 				return fmt.Errorf("failed retry get metric: %w", err)
@@ -98,7 +98,7 @@ func (rs *RetryStorage) GetMetricValue(name, typeMetric string) (metric.Metric, 
 func (rs *RetryStorage) UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error {
 	err := rs.storage.UpdateManyMetrics(ctx, mList)
 	if rs.checkRetry(err) {
-		rs.retry(func() error {
+		err = rs.retry(func() error {
 			err = rs.storage.UpdateManyMetrics(ctx, mList)
 			if err != nil {
 				return fmt.Errorf("failed retry update metrics: %w", err)
@@ -115,7 +115,7 @@ func (rs *RetryStorage) UpdateManyMetrics(ctx context.Context, mList []metric.Me
 func (rs *RetryStorage) Ping() (bool, error) {
 	ok, err := rs.storage.Ping()
 	if rs.checkRetry(err) {
-		rs.retry(func() error {
+		err = rs.retry(func() error {
 			ok, err = rs.storage.Ping()
 			if err != nil || !ok {
 				return fmt.Errorf("failed retry ping: %w", err)
