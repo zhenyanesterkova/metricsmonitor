@@ -10,12 +10,15 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/storagerror"
 )
 
 type PostgresStorage struct {
@@ -48,10 +51,16 @@ func runMigrations(dsn string) error {
 
 	m, err := migrate.NewWithSourceInstance("iofs", d, dsn)
 	if err != nil {
+		if checkRetry(err) {
+			err = storagerror.NewRetriableError(err)
+		}
 		return fmt.Errorf("failed to get a new migrate instance: %w", err)
 	}
 	if err := m.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return fmt.Errorf("failed to apply migrations to the DB: %w", err)
 		}
 	}
@@ -60,6 +69,9 @@ func runMigrations(dsn string) error {
 
 func (psg *PostgresStorage) Ping() (bool, error) {
 	if err := psg.pool.Ping(context.TODO()); err != nil {
+		if checkRetry(err) {
+			err = storagerror.NewRetriableError(err)
+		}
 		return false, fmt.Errorf("failed to ping the DB: %w", err)
 	}
 
@@ -85,6 +97,9 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 		)
 		err := row.Scan(&id, &gValue)
 		if err != nil {
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return metric.Metric{}, fmt.Errorf("failed to scan row when update metric: %w", err)
 		}
 		updating = metric.New(metric.TypeGauge)
@@ -105,6 +120,9 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 		)
 		err := row.Scan(&id, &cValue)
 		if err != nil {
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return metric.Metric{}, fmt.Errorf("failed to scan row when update metric: %w", err)
 		}
 		updating = metric.New(metric.TypeCounter)
@@ -166,6 +184,9 @@ func (psg *PostgresStorage) UpdateManyMetrics(ctx context.Context, mList []metri
 			return errors.New("failed update metrics: unknown metric type")
 		}
 		if err != nil {
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return fmt.Errorf("failed exec query update metric: %w", err)
 		}
 	}
@@ -185,6 +206,9 @@ func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
 		`SELECT id, g_value FROM gauges;`,
 	)
 	if err != nil {
+		if checkRetry(err) {
+			err = storagerror.NewRetriableError(err)
+		}
 		return res, fmt.Errorf("failed to select all metrics from gauges table: %w", err)
 	}
 	defer rowsGauge.Close()
@@ -193,6 +217,9 @@ func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
 	var gVal float64
 	for rowsGauge.Next() {
 		if err := rowsGauge.Scan(&id, &gVal); err != nil {
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return res, fmt.Errorf("failed to scan gauge metric when get all metrics: %w", err)
 		}
 		res = append(res, [2]string{id, strconv.FormatFloat(gVal, 'g', -1, 64)})
@@ -203,6 +230,9 @@ func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
 		`SELECT id, delta FROM counters;`,
 	)
 	if err != nil {
+		if checkRetry(err) {
+			err = storagerror.NewRetriableError(err)
+		}
 		return res, fmt.Errorf("failed to select all metrics from counters table: %w", err)
 	}
 	defer rowsCounter.Close()
@@ -210,6 +240,9 @@ func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
 	var cVal int64
 	for rowsCounter.Next() {
 		if err := rowsCounter.Scan(&id, &cVal); err != nil {
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return res, fmt.Errorf("failed to scan counter metric when get all metrics: %w", err)
 		}
 		res = append(res, [2]string{id, strconv.FormatInt(cVal, 10)})
@@ -236,6 +269,9 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 			if errors.Is(err, pgx.ErrNoRows) {
 				return metric.Metric{}, metric.ErrUnknownMetric
 			}
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
 		}
 		resMetric = metric.New(metric.TypeGauge)
@@ -255,6 +291,9 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 			if errors.Is(err, pgx.ErrNoRows) {
 				return metric.Metric{}, metric.ErrUnknownMetric
 			}
+			if checkRetry(err) {
+				err = storagerror.NewRetriableError(err)
+			}
 			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
 		}
 		resMetric = metric.New(metric.TypeCounter)
@@ -267,4 +306,16 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 func (psg *PostgresStorage) Close() error {
 	psg.pool.Close()
 	return nil
+}
+
+func checkRetry(err error) bool {
+	var pgErr *pgconn.PgError
+	var pgErrConn *pgconn.ConnectError
+	res := false
+	if errors.As(err, &pgErr) {
+		res = pgerrcode.IsConnectionException(pgErr.Code)
+	} else if errors.As(err, &pgErrConn) {
+		res = true
+	}
+	return res
 }

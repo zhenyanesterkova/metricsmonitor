@@ -14,7 +14,7 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/retrystorage"
 )
 
 func main() {
@@ -38,28 +38,27 @@ func run() error {
 		return fmt.Errorf("parse log level error: %w", err)
 	}
 
-	store, err := storage.NewStore(cfg.DBConfig, loggerInst)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("can not create storage: %v", err)
-		return fmt.Errorf("can not create storage: %w", err)
-	}
-
-	defer func() {
-		err := store.Close()
-		if err != nil {
-			loggerInst.LogrusLog.Errorf("can not close storage: %v", err)
-		}
-	}()
-
 	backoffInst := backoff.New(
 		cfg.RetryConfig.MinDelay,
 		cfg.RetryConfig.MaxDelay,
 		cfg.RetryConfig.MaxAttempt,
 	)
 
+	retryStore, err := retrystorage.New(cfg.DBConfig, loggerInst, backoffInst)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("failed create storage: %v", err)
+		return fmt.Errorf("failed create storage: %w", err)
+	}
+	defer func() {
+		err := retryStore.Close()
+		if err != nil {
+			loggerInst.LogrusLog.Errorf("can not close storage: %v", err)
+		}
+	}()
+
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(store, loggerInst, backoffInst)
+	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)
