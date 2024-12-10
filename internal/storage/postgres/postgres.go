@@ -81,8 +81,8 @@ func (psg *PostgresStorage) Ping() error {
 func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error) {
 	var updating metric.Metric
 	var row pgx.Row
+	var id string
 	if m.MType == metric.TypeGauge {
-		var id string
 		var gValue float64
 		row = psg.pool.QueryRow(
 			context.TODO(),
@@ -105,30 +105,31 @@ func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error)
 		updating = metric.New(metric.TypeGauge)
 		updating.ID = id
 		updating.Value = &gValue
-	} else if m.MType == metric.TypeCounter {
-		var id string
-		var cValue int64
-		row = psg.pool.QueryRow(
-			context.TODO(),
-			`INSERT INTO counters (id, delta)
+		return updating, nil
+	}
+
+	var cValue int64
+	row = psg.pool.QueryRow(
+		context.TODO(),
+		`INSERT INTO counters (id, delta)
 			VALUES ($1, $2)
 			ON CONFLICT (id)
 			DO UPDATE SET delta = counters.delta + EXCLUDED.delta
 			RETURNING id, delta;`,
-			m.ID,
-			*m.Delta,
-		)
-		err := row.Scan(&id, &cValue)
-		if err != nil {
-			if checkRetry(err) {
-				err = storagerror.NewRetriableError(err)
-			}
-			return metric.Metric{}, fmt.Errorf("failed to scan row when update metric: %w", err)
+		m.ID,
+		*m.Delta,
+	)
+	err := row.Scan(&id, &cValue)
+	if err != nil {
+		if checkRetry(err) {
+			err = storagerror.NewRetriableError(err)
 		}
-		updating = metric.New(metric.TypeCounter)
-		updating.ID = id
-		updating.Delta = &cValue
+		return metric.Metric{}, fmt.Errorf("failed to scan row when update metric: %w", err)
 	}
+	updating = metric.New(metric.TypeCounter)
+	updating.ID = id
+	updating.Delta = &cValue
+
 	return updating, nil
 }
 
@@ -254,8 +255,8 @@ func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
 func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metric, error) {
 	var resMetric metric.Metric
 	var row pgx.Row
+	var id string
 	if typeMetric == metric.TypeGauge {
-		var id string
 		var gValue float64
 		row = psg.pool.QueryRow(
 			context.TODO(),
@@ -277,29 +278,28 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 		resMetric = metric.New(metric.TypeGauge)
 		resMetric.ID = id
 		resMetric.Value = &gValue
-	} else if typeMetric == metric.TypeCounter {
-		var id string
-		var cValue int64
-		row = psg.pool.QueryRow(
-			context.TODO(),
-			`SELECT id, delta FROM counters
-			WHERE id = $1`,
-			name,
-		)
-		err := row.Scan(&id, &cValue)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return metric.Metric{}, metric.ErrUnknownMetric
-			}
-			if checkRetry(err) {
-				err = storagerror.NewRetriableError(err)
-			}
-			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
-		}
-		resMetric = metric.New(metric.TypeCounter)
-		resMetric.ID = id
-		resMetric.Delta = &cValue
+		return resMetric, nil
 	}
+	var cValue int64
+	row = psg.pool.QueryRow(
+		context.TODO(),
+		`SELECT id, delta FROM counters
+			WHERE id = $1`,
+		name,
+	)
+	err := row.Scan(&id, &cValue)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return metric.Metric{}, metric.ErrUnknownMetric
+		}
+		if checkRetry(err) {
+			err = storagerror.NewRetriableError(err)
+		}
+		return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
+	}
+	resMetric = metric.New(metric.TypeCounter)
+	resMetric.ID = id
+	resMetric.Delta = &cValue
 	return resMetric, nil
 }
 
