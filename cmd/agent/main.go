@@ -20,10 +20,13 @@ func main() {
 	}
 
 	metrics := metric.NewMetricBuf()
-	stats := statistic.New(&wg, metrics, cfg.PollInterval)
-	senderStat := sender.New(cfg.Address, cfg.ReportInterval, &wg, metrics)
+	stats := statistic.New(metrics, cfg.PollInterval)
+	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics)
 
-	go stats.UpdateStatistic()
+	go func() {
+		stats.UpdateStatistic()
+		wg.Done()
+	}()
 	wg.Add(1)
 
 	go func() {
@@ -31,6 +34,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("an error occurred while send report on server %v", err)
 		}
+		wg.Done()
 	}()
 	wg.Add(1)
 

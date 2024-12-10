@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
@@ -23,13 +22,11 @@ type Sender struct {
 
 type ReportData struct {
 	metricsBuf *metric.MetricBuf
-	wGroup     *sync.WaitGroup
 }
 
 func New(
 	addr string,
 	reportInt time.Duration,
-	wg *sync.WaitGroup,
 	buff *metric.MetricBuf,
 ) Sender {
 	return Sender{
@@ -38,7 +35,6 @@ func New(
 		reportInterval: reportInt,
 		report: ReportData{
 			metricsBuf: buff,
-			wGroup:     wg,
 		},
 		requestAttemptIntervals: []string{
 			"1s",
@@ -129,8 +125,6 @@ func (s Sender) SendQueryUpdateMetrics() error {
 }
 
 func (s Sender) SendReport() error {
-	defer s.report.wGroup.Done()
-
 	ticker := time.NewTicker(s.reportInterval)
 	for range ticker.C {
 		log.Println("Start send statistic ...")
