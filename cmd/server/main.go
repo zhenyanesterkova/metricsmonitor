@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
@@ -44,7 +47,19 @@ func run() error {
 		cfg.RetryConfig.MaxAttempt,
 	)
 
-	retryStore, err := retrystorage.New(cfg.DBConfig, loggerInst, backoffInst)
+	checkRetryFunc := func(err error) bool {
+		var pgErr *pgconn.PgError
+		var pgErrConn *pgconn.ConnectError
+		res := false
+		if errors.As(err, &pgErr) {
+			res = pgerrcode.IsConnectionException(pgErr.Code)
+		} else if errors.As(err, &pgErrConn) {
+			res = true
+		}
+		return res
+	}
+
+	retryStore, err := retrystorage.New(cfg.DBConfig, loggerInst, backoffInst, checkRetryFunc)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("failed create storage: %v", err)
 		return fmt.Errorf("failed create storage: %w", err)

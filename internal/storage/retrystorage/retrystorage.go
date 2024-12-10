@@ -2,7 +2,6 @@ package retrystorage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -11,17 +10,29 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/storagerror"
 )
 
 type RetryStorage struct {
-	storage storage.Store
-	backoff *backoff.Backoff
-	logger  logger.LogrusLogger
+	storage    storage.Store
+	backoff    *backoff.Backoff
+	logger     logger.LogrusLogger
+	checkRetry func(error) bool
 }
 
-func New(cfg config.DataBaseConfig, loggerInst logger.LogrusLogger, bf *backoff.Backoff) (*RetryStorage, error) {
-	retryStore := &RetryStorage{}
+func New(
+	cfg config.DataBaseConfig,
+	loggerInst logger.LogrusLogger,
+	bf *backoff.Backoff,
+	checkRetryFunc func(error) bool,
+) (
+	*RetryStorage,
+	error,
+) {
+	retryStore := &RetryStorage{
+		checkRetry: checkRetryFunc,
+		backoff:    bf,
+		logger:     loggerInst,
+	}
 
 	store, err := storage.NewStore(cfg, loggerInst)
 	if err != nil {
@@ -39,8 +50,6 @@ func New(cfg config.DataBaseConfig, loggerInst logger.LogrusLogger, bf *backoff.
 	}
 
 	retryStore.storage = store
-	retryStore.backoff = bf
-	retryStore.logger = loggerInst
 	return retryStore, nil
 }
 
@@ -134,12 +143,6 @@ func (rs *RetryStorage) Close() error {
 		return fmt.Errorf("failed close DB: %w", err)
 	}
 	return nil
-}
-
-func (rs *RetryStorage) checkRetry(err error) bool {
-	var retryError *storagerror.RetriableError
-	res := errors.As(err, &retryError)
-	return res
 }
 
 func (rs *RetryStorage) retry(work func() error) error {
