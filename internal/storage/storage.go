@@ -16,7 +16,7 @@ type Store interface {
 	GetAllMetrics() ([][2]string, error)
 	GetMetricValue(name, typeMetric string) (metric.Metric, error)
 	Close() error
-	Ping() (bool, error)
+	Ping() error
 	UpdateManyMetrics(ctx context.Context, mList []metric.Metric) error
 }
 

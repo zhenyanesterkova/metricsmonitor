@@ -112,21 +112,21 @@ func (rs *RetryStorage) UpdateManyMetrics(ctx context.Context, mList []metric.Me
 	return nil
 }
 
-func (rs *RetryStorage) Ping() (bool, error) {
-	ok, err := rs.storage.Ping()
+func (rs *RetryStorage) Ping() error {
+	err := rs.storage.Ping()
 	if rs.checkRetry(err) {
 		err = rs.retry(func() error {
-			ok, err = rs.storage.Ping()
-			if err != nil || !ok {
+			err = rs.storage.Ping()
+			if err != nil {
 				return fmt.Errorf("failed retry ping: %w", err)
 			}
 			return nil
 		})
 	}
-	if err != nil || !ok {
-		return ok, fmt.Errorf("failed ping: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed ping: %w", err)
 	}
-	return ok, nil
+	return nil
 }
 
 func (rs *RetryStorage) Close() error {

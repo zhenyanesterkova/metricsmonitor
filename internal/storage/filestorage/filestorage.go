@@ -2,7 +2,6 @@ package filestorage
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -122,16 +121,6 @@ func (fs *FileStorage) startSaveStorage(storeInterval time.Duration) error {
 	return nil
 }
 
-func (fs *FileStorage) Ping() (bool, error) {
-	if fs.MemStorage == nil {
-		return false, errors.New("filestorage is not initialized")
-	}
-	pingMemStorage, err := fs.MemStorage.Ping()
-	if err != nil || !pingMemStorage {
-		return false, fmt.Errorf("memstorage in filestorage is not initialized: %w", err)
-	}
-	if fs.r == nil || fs.w == nil {
-		return false, fmt.Errorf("reader or writer in filestorage is not initialized: %w", err)
-	}
-	return true, nil
+func (fs *FileStorage) Ping() error {
+	return nil
 }

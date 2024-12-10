@@ -99,9 +99,9 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
 
-	ok, err := rh.Repo.Ping()
+	err := rh.Repo.Ping()
 
-	if err != nil || !ok {
+	if err != nil {
 		log.Errorf("failed ping storage: %v", err)
 		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return

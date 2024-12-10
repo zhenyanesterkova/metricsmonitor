@@ -93,9 +93,6 @@ func (s *MemStorage) Close() error {
 	return nil
 }
 
-func (s *MemStorage) Ping() (bool, error) {
-	if s.metrics != nil {
-		return true, nil
-	}
-	return false, nil
+func (s *MemStorage) Ping() error {
+	return nil
 }

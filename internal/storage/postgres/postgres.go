@@ -67,15 +67,15 @@ func runMigrations(dsn string) error {
 	return nil
 }
 
-func (psg *PostgresStorage) Ping() (bool, error) {
+func (psg *PostgresStorage) Ping() error {
 	if err := psg.pool.Ping(context.TODO()); err != nil {
 		if checkRetry(err) {
 			err = storagerror.NewRetriableError(err)
 		}
-		return false, fmt.Errorf("failed to ping the DB: %w", err)
+		return fmt.Errorf("failed to ping the DB: %w", err)
 	}
 
-	return true, nil
+	return nil
 }
 
 func (psg *PostgresStorage) UpdateMetric(m metric.Metric) (metric.Metric, error) {
