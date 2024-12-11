@@ -9,22 +9,75 @@ import (
 )
 
 func (c *Config) setFlagsVariables() error {
-	flag.StringVar(&c.SConfig.Address, "a", c.SConfig.Address, "address and port to run server")
-	flag.StringVar(&c.LConfig.Level, "l", c.LConfig.Level, "log level")
+	flag.StringVar(
+		&c.SConfig.Address,
+		"a",
+		c.SConfig.Address,
+		"address and port to run server",
+	)
+
+	flag.StringVar(
+		&c.LConfig.Level,
+		"l",
+		c.LConfig.Level,
+		"log level",
+	)
 
 	var tempDur int
-	flag.IntVar(&tempDur, "i", DefaultStoreInterval, "store interval")
+	flag.IntVar(
+		&tempDur,
+		"i",
+		DefaultStoreInterval,
+		"store interval",
+	)
 
-	flag.StringVar(&c.RConfig.FileStoragePath, "f", c.RConfig.FileStoragePath, "file storage path")
-	flag.BoolVar(&c.RConfig.Restore, "r", c.RConfig.Restore, "need restore")
+	fileStoragePath := ""
+	flag.StringVar(
+		&fileStoragePath,
+		"f",
+		fileStoragePath,
+		"file storage path",
+	)
+
+	restore := false
+	flag.BoolVar(
+		&restore,
+		"r",
+		restore,
+		"need restore",
+	)
+
+	dsn := ""
+	flag.StringVar(
+		&dsn,
+		"d",
+		dsn,
+		"database dsn",
+	)
+
 	flag.Parse()
+
+	if isFlagPassed("f") {
+		c.DBConfig.FileStorageConfig.FileStoragePath = fileStoragePath
+	}
 
 	if isFlagPassed("i") {
 		dur, err := time.ParseDuration(strconv.Itoa(tempDur) + "s")
 		if err != nil {
 			return errors.New("can not parse store interval as duration " + err.Error())
 		}
-		c.RConfig.StoreInterval = dur
+		c.DBConfig.FileStorageConfig.StoreInterval = dur
+	}
+
+	if isFlagPassed("r") {
+		c.DBConfig.FileStorageConfig.Restore = restore
+	}
+
+	if isFlagPassed("d") {
+		if c.DBConfig.PostgresConfig == nil {
+			c.DBConfig.PostgresConfig = &PostgresConfig{}
+		}
+		c.DBConfig.PostgresConfig.DSN = dsn
 	}
 
 	return nil

@@ -6,9 +6,10 @@ import (
 )
 
 type Config struct {
-	SConfig ServerConfig
-	LConfig LoggerConfig
-	RConfig RestoreConfig
+	DBConfig    DataBaseConfig
+	SConfig     ServerConfig
+	LConfig     LoggerConfig
+	RetryConfig RetryConfig
 }
 
 func New() *Config {
@@ -19,10 +20,17 @@ func New() *Config {
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,
 		},
-		RConfig: RestoreConfig{
-			FileStoragePath: DefaultFileStoragePath,
-			Restore:         DefaultRestore,
-			StoreInterval:   DefaultStoreInterval * time.Second,
+		DBConfig: DataBaseConfig{
+			FileStorageConfig: &FileStorageConfig{
+				FileStoragePath: DefaultFileStoragePath,
+				StoreInterval:   DefaultStoreInterval * time.Second,
+				Restore:         DefaultRestore,
+			},
+		},
+		RetryConfig: RetryConfig{
+			MinDelay:   DefaultMinRetryDelay,
+			MaxDelay:   DefaultMaxRetryDelay,
+			MaxAttempt: DefaultMaxRetryAttempt,
 		},
 	}
 }

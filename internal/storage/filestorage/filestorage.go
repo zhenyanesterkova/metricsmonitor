@@ -18,7 +18,7 @@ type FileStorage struct {
 	log logger.LogrusLogger
 }
 
-func New(conf config.RestoreConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
+func New(conf config.FileStorageConfig, storeLog logger.LogrusLogger) (*FileStorage, error) {
 	fileWriter, err := rwfile.NewFileWriter(conf.FileStoragePath)
 	if err != nil {
 		return nil, fmt.Errorf("file writer error: %w", err)
@@ -118,5 +118,9 @@ func (fs *FileStorage) startSaveStorage(storeInterval time.Duration) error {
 		}
 		fs.log.LogrusLog.Info("end storage copying...")
 	}
+	return nil
+}
+
+func (fs *FileStorage) Ping() error {
 	return nil
 }

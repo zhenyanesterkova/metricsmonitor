@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"sync"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
@@ -21,22 +20,13 @@ func main() {
 	}
 
 	metrics := metric.NewMetricBuf()
-	stats := statistic.Statistic{
-		PollInterval: cfg.PollInterval,
-		WGroup:       &wg,
-		MetricsBuf:   metrics,
-	}
-	senderStat := sender.Sender{
-		Client:         &http.Client{},
-		Endpoint:       cfg.Address,
-		ReportInterval: cfg.ReportInterval,
-		Report: sender.ReportData{
-			MetricsBuf: metrics,
-			WGroup:     &wg,
-		},
-	}
+	stats := statistic.New(metrics, cfg.PollInterval)
+	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics)
 
-	go stats.UpdateStatistic()
+	go func() {
+		stats.UpdateStatistic()
+		wg.Done()
+	}()
 	wg.Add(1)
 
 	go func() {
@@ -44,6 +34,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("an error occurred while send report on server %v", err)
 		}
+		wg.Done()
 	}()
 	wg.Add(1)
 

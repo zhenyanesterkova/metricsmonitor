@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,11 +10,14 @@ import (
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/storage"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/retrystorage"
 )
 
 func main() {
@@ -37,14 +41,31 @@ func run() error {
 		return fmt.Errorf("parse log level error: %w", err)
 	}
 
-	store, err := storage.NewStore(cfg.RConfig, loggerInst)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("can not create storage: %v", err)
-		return fmt.Errorf("can not create storage: %w", err)
+	backoffInst := backoff.New(
+		cfg.RetryConfig.MinDelay,
+		cfg.RetryConfig.MaxDelay,
+		cfg.RetryConfig.MaxAttempt,
+	)
+
+	checkRetryFunc := func(err error) bool {
+		var pgErr *pgconn.PgError
+		var pgErrConn *pgconn.ConnectError
+		res := false
+		if errors.As(err, &pgErr) {
+			res = pgerrcode.IsConnectionException(pgErr.Code)
+		} else if errors.As(err, &pgErrConn) {
+			res = true
+		}
+		return res
 	}
 
+	retryStore, err := retrystorage.New(cfg.DBConfig, loggerInst, backoffInst, checkRetryFunc)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("failed create storage: %v", err)
+		return fmt.Errorf("failed create storage: %w", err)
+	}
 	defer func() {
-		err := store.Close()
+		err := retryStore.Close()
 		if err != nil {
 			loggerInst.LogrusLog.Errorf("can not close storage: %v", err)
 		}
@@ -52,13 +73,12 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(store, loggerInst)
+	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 
-	loggerInst.LogrusLog.Debugf("Start Server on %s", cfg.SConfig.Address)
 	loggerInst.LogrusLog.Infof("Start Server on %s", cfg.SConfig.Address)
 	go func() {
 		if err := http.ListenAndServe(cfg.SConfig.Address, router); err != nil {

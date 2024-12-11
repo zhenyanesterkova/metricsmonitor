@@ -16,6 +16,7 @@ func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Reque
 	log := rh.Logger.LogrusLog
 
 	res, err := rh.Repo.GetAllMetrics()
+
 	if err != nil {
 		log.Errorf("handler func GetAllMetrics(): error get metrics - %v", err)
 		http.Error(w, TextServerError, http.StatusInternalServerError)
@@ -46,6 +47,7 @@ func (rh *RepositorieHandler) GetMetricValue(w http.ResponseWriter, r *http.Requ
 	metricType := chi.URLParam(r, "typeMetric")
 
 	res, err := rh.Repo.GetMetricValue(name, metricType)
+
 	if err != nil {
 		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
 			w.WriteHeader(http.StatusNotFound)
@@ -72,6 +74,7 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 	}
 
 	res, err := rh.Repo.GetMetricValue(metrica.ID, metrica.MType)
+
 	if err != nil {
 		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
 			w.WriteHeader(http.StatusNotFound)
@@ -91,4 +94,18 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	log := rh.Logger.LogrusLog
+
+	err := rh.Repo.Ping()
+
+	if err != nil {
+		log.Errorf("failed ping storage: %v", err)
+		http.Error(w, TextServerError, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

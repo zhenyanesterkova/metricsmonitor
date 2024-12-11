@@ -1,8 +1,6 @@
 package config
 
-import (
-	"time"
-)
+import "time"
 
 const (
 	DefaultStoreInterval   = 300
@@ -10,7 +8,16 @@ const (
 	DefaultRestore         = true
 )
 
-type RestoreConfig struct {
+type DataBaseConfig struct {
+	PostgresConfig    *PostgresConfig
+	FileStorageConfig *FileStorageConfig
+}
+
+type PostgresConfig struct {
+	DSN string
+}
+
+type FileStorageConfig struct {
 	FileStoragePath string
 	StoreInterval   time.Duration
 	Restore         bool
