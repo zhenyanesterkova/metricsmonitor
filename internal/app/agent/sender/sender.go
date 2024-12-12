@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -93,12 +92,9 @@ func (s Sender) SendQueryUpdateMetrics() error {
 
 	if s.hashKey != nil {
 		h := hmac.New(sha256.New, []byte(*s.hashKey))
-		if _, err := io.Copy(h, &buff); err != nil {
-			return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): failed copies from buff to hash - %w", err)
-		}
+		h.Write(buff.Bytes())
 		sum := hex.EncodeToString(h.Sum(nil))
 		req.Header.Set("HashSHA256", sum)
-		log.Printf("sign: %s", sum)
 	}
 
 	log.Println("send request ...")

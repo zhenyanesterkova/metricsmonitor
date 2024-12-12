@@ -23,23 +23,29 @@ type Repositorie interface {
 }
 
 type RepositorieHandler struct {
-	Repo   Repositorie
-	Logger logger.LogrusLogger
+	Repo    Repositorie
+	Logger  logger.LogrusLogger
+	hashKey *string
 }
 
 func NewRepositorieHandler(
 	rep Repositorie,
 	log logger.LogrusLogger,
+	key *string,
 ) *RepositorieHandler {
 	return &RepositorieHandler{
-		Repo:   rep,
-		Logger: log,
+		Repo:    rep,
+		Logger:  log,
+		hashKey: key,
 	}
 }
 
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
-	mdlWare := middleware.NewMiddlewareStruct(rh.Logger)
+	mdlWare := middleware.NewMiddlewareStruct(rh.Logger, rh.hashKey)
 	router.Use(mdlWare.RequestLogger)
+	if rh.hashKey != nil {
+		router.Use(mdlWare.CheckSignData)
+	}
 	router.Use(mdlWare.GZipMiddleware)
 	router.Route("/", func(r chi.Router) {
 		r.Get("/", rh.GetAllMetrics)

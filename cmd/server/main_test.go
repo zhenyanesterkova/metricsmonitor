@@ -82,7 +82,7 @@ func TestRouter(t *testing.T) {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst)
+	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, nil)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)

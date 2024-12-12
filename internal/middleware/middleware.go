@@ -3,11 +3,13 @@ package middleware
 import "github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 
 type MiddlewareStruct struct {
-	Logger logger.LogrusLogger
+	Logger  logger.LogrusLogger
+	hashKey *string
 }
 
-func NewMiddlewareStruct(log logger.LogrusLogger) MiddlewareStruct {
+func NewMiddlewareStruct(log logger.LogrusLogger, key *string) MiddlewareStruct {
 	return MiddlewareStruct{
-		Logger: log,
+		Logger:  log,
+		hashKey: key,
 	}
 }
