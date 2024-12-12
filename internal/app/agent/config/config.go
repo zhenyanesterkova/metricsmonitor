@@ -14,6 +14,7 @@ type Config struct {
 	Address        string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
+	HashKey        *string
 }
 
 func New() *Config {

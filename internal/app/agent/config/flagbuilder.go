@@ -11,6 +11,9 @@ import (
 func (c *Config) setFlags() error {
 	flag.StringVar(&c.Address, "a", c.Address, "address and port to run server")
 
+	var key string
+	flag.StringVar(&key, "k", "", "hash key")
+
 	var durPoll int
 	flag.IntVar(&durPoll, "p", defaultPollInt, "the frequency of polling metrics from the runtime package")
 
@@ -18,6 +21,10 @@ func (c *Config) setFlags() error {
 	flag.IntVar(&durRep, "r", defaultReportInt, "the frequency of sending metrics to the server")
 
 	flag.Parse()
+
+	if isFlagPassed("k") {
+		c.HashKey = &key
+	}
 
 	if isFlagPassed("p") {
 		dur, err := time.ParseDuration(strconv.Itoa(durPoll) + "s")

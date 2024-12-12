@@ -14,6 +14,12 @@ func (c *Config) setEnvAddress() {
 	}
 }
 
+func (c *Config) setEnvHashKey() {
+	if key, ok := os.LookupEnv("KEY"); ok {
+		c.HashKey = &key
+	}
+}
+
 func (c *Config) setEnvPollInterval() error {
 	if pollInt, ok := os.LookupEnv("POLL_INTERVAL"); ok {
 		log.Printf("env:POLL_INTERVAL=%s", pollInt)
@@ -40,6 +46,8 @@ func (c *Config) setEnvReportInterval() error {
 
 func (c *Config) buildEnv() error {
 	c.setEnvAddress()
+
+	c.setEnvHashKey()
 
 	err := c.setEnvPollInterval()
 	if err != nil {
