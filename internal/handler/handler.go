@@ -42,6 +42,7 @@ func NewRepositorieHandler(
 
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 	mdlWare := middleware.NewMiddlewareStruct(rh.Logger, rh.hashKey)
+	router.Use(mdlWare.ResetRespDataStruct)
 	router.Use(mdlWare.RequestLogger)
 	if rh.hashKey != nil {
 		router.Use(mdlWare.CheckSignData)
