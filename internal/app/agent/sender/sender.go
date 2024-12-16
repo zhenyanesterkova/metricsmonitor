@@ -3,6 +3,9 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,6 +18,7 @@ import (
 type Sender struct {
 	report                  ReportData
 	client                  *http.Client
+	hashKey                 *string
 	endpoint                string
 	requestAttemptIntervals []string
 	reportInterval          time.Duration
@@ -28,6 +32,7 @@ func New(
 	addr string,
 	reportInt time.Duration,
 	buff *metric.MetricBuf,
+	hashKey *string,
 ) Sender {
 	return Sender{
 		client:         &http.Client{},
@@ -41,6 +46,7 @@ func New(
 			"3s",
 			"5s",
 		},
+		hashKey: hashKey,
 	}
 }
 
@@ -83,6 +89,13 @@ func (s Sender) SendQueryUpdateMetrics() error {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+
+	if s.hashKey != nil {
+		h := hmac.New(sha256.New, []byte(*s.hashKey))
+		h.Write(buff.Bytes())
+		sum := hex.EncodeToString(h.Sum(nil))
+		req.Header.Set("HashSHA256", sum)
+	}
 
 	log.Println("send request ...")
 	resp, err := s.client.Do(req)

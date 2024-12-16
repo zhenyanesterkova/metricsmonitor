@@ -21,7 +21,7 @@ func main() {
 
 	metrics := metric.NewMetricBuf()
 	stats := statistic.New(metrics, cfg.PollInterval)
-	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics)
+	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey)
 
 	go func() {
 		stats.UpdateStatistic()

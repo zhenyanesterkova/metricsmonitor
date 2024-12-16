@@ -11,6 +11,7 @@ const (
 )
 
 type Config struct {
+	HashKey        *string
 	Address        string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
