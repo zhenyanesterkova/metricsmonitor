@@ -9,9 +9,9 @@ import (
 )
 
 type responseData struct {
+	hashKey *string
 	status  int
 	size    int
-	hashKey *string
 }
 
 type responseDataWriter struct {
