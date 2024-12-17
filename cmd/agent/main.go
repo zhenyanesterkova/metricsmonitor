@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
@@ -11,6 +14,7 @@ import (
 )
 
 func main() {
+	g := new(errgroup.Group)
 	var wg sync.WaitGroup
 
 	cfg := config.New()
@@ -21,22 +25,25 @@ func main() {
 
 	metrics := metric.NewMetricBuf()
 	stats := statistic.New(metrics, cfg.PollInterval)
-	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey)
+	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit)
 
-	go func() {
-		stats.UpdateStatistic()
-		wg.Done()
-	}()
+	go stats.UpdateStatistic()
 	wg.Add(1)
 
-	go func() {
-		err := senderStat.SendReport()
+	g.Go(func() error {
+		err := stats.UpdateGopsutilStatistic()
 		if err != nil {
-			log.Fatalf("an error occurred while send report on server %v", err)
+			log.Fatalf("an error occurred while update gopsutil statistic %v", err)
+			return fmt.Errorf("an error occurred while update gopsutil statistic %w", err)
 		}
-		wg.Done()
-	}()
+		return nil
+	})
+
+	go senderStat.SendReport()
 	wg.Add(1)
 
+	if err := g.Wait(); err != nil {
+		log.Fatalf("fatal error: %v", err)
+	}
 	wg.Wait()
 }
