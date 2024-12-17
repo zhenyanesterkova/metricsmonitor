@@ -2,8 +2,10 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -44,6 +46,17 @@ func (c *Config) setEnvReportInterval() error {
 	return nil
 }
 
+func (c *Config) setEnvRateLimit() error {
+	if lim, ok := os.LookupEnv("RATE_LIMIT"); ok {
+		limit, err := strconv.Atoi(lim)
+		if err != nil {
+			return fmt.Errorf("failed parse RATE_LIMIT as int: %w", err)
+		}
+		c.RateLimit = limit
+	}
+	return nil
+}
+
 func (c *Config) buildEnv() error {
 	c.setEnvAddress()
 
@@ -55,6 +68,11 @@ func (c *Config) buildEnv() error {
 	}
 
 	err = c.setEnvReportInterval()
+	if err != nil {
+		return err
+	}
+
+	err = c.setEnvRateLimit()
 	if err != nil {
 		return err
 	}

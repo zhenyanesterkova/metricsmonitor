@@ -20,6 +20,9 @@ func (c *Config) setFlags() error {
 	var durRep int
 	flag.IntVar(&durRep, "r", defaultReportInt, "the frequency of sending metrics to the server")
 
+	var rateLimit int
+	flag.IntVar(&rateLimit, "l", defaultRateLimit, "rate limit")
+
 	flag.Parse()
 
 	if isFlagPassed("k") {
@@ -40,6 +43,10 @@ func (c *Config) setFlags() error {
 			return errors.New("can not parse report_interval as duration " + err.Error())
 		}
 		c.ReportInterval = dur
+	}
+
+	if isFlagPassed("l") {
+		c.RateLimit = rateLimit
 	}
 
 	return nil
