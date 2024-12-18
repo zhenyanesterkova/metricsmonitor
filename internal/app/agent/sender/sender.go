@@ -3,6 +3,7 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -137,31 +138,35 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 	return nil
 }
 
-func (s *Sender) SendReport() {
+func (s *Sender) SendReport(ctx context.Context) {
 	jobs := make(chan struct{}, 1)
-	results := make(chan error, 1)
-	for w := 1; w <= s.rateLimit; w++ {
-		go func(jobs <-chan struct{}, results chan error) {
-			for range jobs {
-				err := s.SendQueryUpdateMetrics()
-				if err != nil {
-					log.Printf("error occurred while sending metrics to server %v", err)
-					results <- fmt.Errorf("error occurred while sending metrics to server %w", err)
-				}
 
-				results <- nil
-			}
-		}(jobs, results)
+	defer close(jobs)
+
+	for w := 1; w <= s.rateLimit; w++ {
+		go s.sendWorker(jobs)
 	}
 	ticker := time.NewTicker(s.reportInterval)
 	for range ticker.C {
-		log.Println("Start send statistic for a single metric ...")
-
-		jobs <- struct{}{}
-		err := <-results
-		if err == nil {
-			s.report.metricsBuf.ResetCountersValues()
+		select {
+		case <-ctx.Done():
+			log.Println("Stop send workers.")
+			return
+		case jobs <- struct{}{}:
+			log.Println("Start send statistic ...")
 		}
 	}
-	close(jobs)
+}
+
+func (s *Sender) sendWorker(
+	jobs <-chan struct{},
+) {
+	for range jobs {
+		err := s.SendQueryUpdateMetrics()
+		if err != nil {
+			log.Printf("error occurred while sending metrics to server %v", err)
+			continue
+		}
+		s.report.metricsBuf.ResetCountersValues()
+	}
 }

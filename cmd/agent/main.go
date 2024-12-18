@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
-	"sync"
-
-	"golang.org/x/sync/errgroup"
+	"os/signal"
+	"syscall"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
@@ -14,9 +13,6 @@ import (
 )
 
 func main() {
-	g := new(errgroup.Group)
-	var wg sync.WaitGroup
-
 	cfg := config.New()
 	err := cfg.Build()
 	if err != nil {
@@ -27,23 +23,25 @@ func main() {
 	stats := statistic.New(metrics, cfg.PollInterval)
 	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit)
 
-	go stats.UpdateStatistic()
-	wg.Add(1)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 
-	g.Go(func() error {
-		err := stats.UpdateGopsutilStatistic()
-		if err != nil {
-			log.Fatalf("an error occurred while update gopsutil statistic %v", err)
-			return fmt.Errorf("an error occurred while update gopsutil statistic %w", err)
-		}
-		return nil
-	})
+	errCh := make(chan error)
 
-	go senderStat.SendReport()
-	wg.Add(1)
+	updateCtx := context.WithoutCancel(ctx)
+	go stats.UpdateStatistic(updateCtx)
 
-	if err := g.Wait(); err != nil {
-		log.Fatalf("fatal error: %v", err)
+	updateGopsutilCtx := context.WithoutCancel(ctx)
+	go stats.UpdateGopsutilStatistic(updateGopsutilCtx, errCh)
+
+	sendCtx := context.WithoutCancel(ctx)
+	go senderStat.SendReport(sendCtx)
+
+	select {
+	case <-ctx.Done():
+		log.Println("Got stop signal")
+	case err := <-errCh:
+		stop()
+		log.Printf("fatal error: %v", err)
 	}
-	wg.Wait()
 }
