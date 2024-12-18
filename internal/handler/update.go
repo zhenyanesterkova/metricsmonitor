@@ -65,8 +65,6 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 		}
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +106,6 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(updating); err != nil {
@@ -136,6 +133,4 @@ func (rh *RepositorieHandler) UpdateManyMetrics(w http.ResponseWriter, r *http.R
 		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }

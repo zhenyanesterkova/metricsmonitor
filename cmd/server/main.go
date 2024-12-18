@@ -73,7 +73,7 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst)
+	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst, cfg.SConfig.HashKey)
 	repoHandler.InitChiRouter(router)
 
 	c := make(chan os.Signal, 1)

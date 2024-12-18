@@ -55,6 +55,14 @@ func (c *Config) setFlagsVariables() error {
 		"database dsn",
 	)
 
+	hashKey := ""
+	flag.StringVar(
+		&hashKey,
+		"k",
+		hashKey,
+		"hash key",
+	)
+
 	flag.Parse()
 
 	if isFlagPassed("f") {
@@ -78,6 +86,10 @@ func (c *Config) setFlagsVariables() error {
 			c.DBConfig.PostgresConfig = &PostgresConfig{}
 		}
 		c.DBConfig.PostgresConfig.DSN = dsn
+	}
+
+	if isFlagPassed("k") {
+		c.SConfig.HashKey = &hashKey
 	}
 
 	return nil

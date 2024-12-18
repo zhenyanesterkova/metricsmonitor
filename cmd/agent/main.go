@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
-	"sync"
+	"os/signal"
+	"syscall"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
@@ -11,8 +13,6 @@ import (
 )
 
 func main() {
-	var wg sync.WaitGroup
-
 	cfg := config.New()
 	err := cfg.Build()
 	if err != nil {
@@ -21,22 +21,27 @@ func main() {
 
 	metrics := metric.NewMetricBuf()
 	stats := statistic.New(metrics, cfg.PollInterval)
-	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics)
+	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit)
 
-	go func() {
-		stats.UpdateStatistic()
-		wg.Done()
-	}()
-	wg.Add(1)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 
-	go func() {
-		err := senderStat.SendReport()
-		if err != nil {
-			log.Fatalf("an error occurred while send report on server %v", err)
-		}
-		wg.Done()
-	}()
-	wg.Add(1)
+	errCh := make(chan error)
 
-	wg.Wait()
+	updateCtx := context.WithoutCancel(ctx)
+	go stats.UpdateStatistic(updateCtx)
+
+	updateGopsutilCtx := context.WithoutCancel(ctx)
+	go stats.UpdateGopsutilStatistic(updateGopsutilCtx, errCh)
+
+	sendCtx := context.WithoutCancel(ctx)
+	go senderStat.SendReport(sendCtx)
+
+	select {
+	case <-ctx.Done():
+		log.Println("Got stop signal")
+	case err := <-errCh:
+		stop()
+		log.Printf("fatal error: %v", err)
+	}
 }
