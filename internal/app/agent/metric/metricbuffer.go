@@ -17,7 +17,7 @@ const (
 
 type MetricBuf struct {
 	Metrics map[string]*Metric
-	mutex   *sync.RWMutex
+	mutex   *sync.Mutex
 }
 
 func NewMetricBuf() *MetricBuf {
@@ -152,13 +152,13 @@ func NewMetricBuf() *MetricBuf {
 			MType: "gauge",
 		},
 	}
-	buffer.mutex = &sync.RWMutex{}
+	buffer.mutex = &sync.Mutex{}
 	return buffer
 }
 
 func (buf *MetricBuf) GetMetricsList() []Metric {
-	buf.mutex.RLock()
-	defer buf.mutex.RUnlock()
+	buf.mutex.Lock()
+	defer buf.mutex.Unlock()
 
 	mList := make([]Metric, 0)
 	for _, m := range buf.Metrics {
