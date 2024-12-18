@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net/http"
 )
@@ -17,9 +18,11 @@ func (lm MiddlewareStruct) CheckSignData(next http.Handler) http.Handler {
 
 			bodyBytes, err := io.ReadAll(r.Body)
 			if err != nil {
-				log.Errorf("middleware: CheckSignData - failed read body: %v", err)
-				w.WriteHeader(http.StatusBadRequest)
-				return
+				if errors.Is(err, io.EOF) {
+					log.Errorf("middleware: CheckSignData - failed read body: %v", err)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
 			}
 			err = r.Body.Close()
 			if err != nil {
