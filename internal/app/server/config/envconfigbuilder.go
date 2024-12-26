@@ -12,6 +12,9 @@ func (c *Config) setEnvServerConfig() {
 	if envEndpoint, ok := os.LookupEnv("ADDRESS"); ok {
 		c.SConfig.Address = envEndpoint
 	}
+	if envHashKey, ok := os.LookupEnv("KEY"); ok {
+		c.SConfig.HashKey = &envHashKey
+	}
 }
 
 func (c *Config) setEnvLoggerConfig() {

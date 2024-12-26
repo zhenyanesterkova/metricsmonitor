@@ -1,9 +1,13 @@
 package metric
 
 import (
+	"fmt"
 	"math/rand/v2"
 	"runtime"
 	"sync"
+
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 const (
@@ -135,9 +139,32 @@ func NewMetricBuf() *MetricBuf {
 			ID:    "RandomValue",
 			MType: "gauge",
 		},
+		"TotalMemory": &Metric{
+			ID:    "TotalMemory",
+			MType: "gauge",
+		},
+		"FreeMemory": &Metric{
+			ID:    "FreeMemory",
+			MType: "gauge",
+		},
+		"CPUutilization1": &Metric{
+			ID:    "CPUutilization1",
+			MType: "gauge",
+		},
 	}
 	buffer.mutex = &sync.Mutex{}
 	return buffer
+}
+
+func (buf *MetricBuf) GetMetricsList() []Metric {
+	buf.mutex.Lock()
+	defer buf.mutex.Unlock()
+
+	mList := make([]Metric, 0)
+	for _, m := range buf.Metrics {
+		mList = append(mList, *m)
+	}
+	return mList
 }
 
 func (buf *MetricBuf) UpdateMetrics() {
@@ -178,6 +205,27 @@ func (buf *MetricBuf) UpdateMetrics() {
 	buf.Metrics["PollCount"].updateCounter()
 
 	buf.Metrics["RandomValue"].updateGauge(rand.Float64())
+}
+
+func (buf *MetricBuf) UpdateGopsutilMetrics() error {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return fmt.Errorf("failed get memory metric values: %w", err)
+	}
+
+	cpuCount, err := cpu.Counts(true)
+	if err != nil {
+		return fmt.Errorf("failed get cpu metric value: %w", err)
+	}
+
+	buf.mutex.Lock()
+	defer buf.mutex.Unlock()
+
+	buf.Metrics["TotalMemory"].updateGauge(float64(v.Total))
+	buf.Metrics["FreeMemory"].updateGauge(float64(v.Free))
+	buf.Metrics["CPUutilization1"].updateGauge(float64(cpuCount))
+
+	return nil
 }
 
 func (buf *MetricBuf) ResetCountersValues() {

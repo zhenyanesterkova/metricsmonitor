@@ -3,6 +3,10 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,9 +19,11 @@ import (
 type Sender struct {
 	report                  ReportData
 	client                  *http.Client
+	hashKey                 *string
 	endpoint                string
 	requestAttemptIntervals []string
 	reportInterval          time.Duration
+	rateLimit               int
 }
 
 type ReportData struct {
@@ -28,8 +34,10 @@ func New(
 	addr string,
 	reportInt time.Duration,
 	buff *metric.MetricBuf,
-) Sender {
-	return Sender{
+	hashKey *string,
+	rateLimit int,
+) *Sender {
+	return &Sender{
 		client:         &http.Client{},
 		endpoint:       addr,
 		reportInterval: reportInt,
@@ -41,14 +49,13 @@ func New(
 			"3s",
 			"5s",
 		},
+		hashKey:   hashKey,
+		rateLimit: rateLimit,
 	}
 }
 
-func (s Sender) SendQueryUpdateMetrics() error {
-	mList := make([]metric.Metric, 0)
-	for _, m := range s.report.metricsBuf.Metrics {
-		mList = append(mList, *m)
-	}
+func (s *Sender) SendQueryUpdateMetrics() error {
+	mList := s.report.metricsBuf.GetMetricsList()
 
 	if len(mList) == 0 {
 		log.Println("    no data for sending ...")
@@ -83,6 +90,13 @@ func (s Sender) SendQueryUpdateMetrics() error {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+
+	if s.hashKey != nil {
+		h := hmac.New(sha256.New, []byte(*s.hashKey))
+		h.Write(buff.Bytes())
+		sum := hex.EncodeToString(h.Sum(nil))
+		req.Header.Set("HashSHA256", sum)
+	}
 
 	log.Println("send request ...")
 	resp, err := s.client.Do(req)
@@ -124,18 +138,35 @@ func (s Sender) SendQueryUpdateMetrics() error {
 	return nil
 }
 
-func (s Sender) SendReport() error {
+func (s *Sender) SendReport(ctx context.Context) {
+	jobs := make(chan struct{}, 1)
+
+	defer close(jobs)
+
+	for w := 1; w <= s.rateLimit; w++ {
+		go s.sendWorker(jobs)
+	}
 	ticker := time.NewTicker(s.reportInterval)
 	for range ticker.C {
-		log.Println("Start send statistic ...")
+		select {
+		case <-ctx.Done():
+			log.Println("Stop send workers.")
+			return
+		case jobs <- struct{}{}:
+			log.Println("Start send statistic ...")
+		}
+	}
+}
+
+func (s *Sender) sendWorker(
+	jobs <-chan struct{},
+) {
+	for range jobs {
 		err := s.SendQueryUpdateMetrics()
 		if err != nil {
-			log.Printf("an error occurred while sending the report to the server %v", err)
+			log.Printf("error occurred while sending metrics to server %v", err)
 			continue
 		}
-
 		s.report.metricsBuf.ResetCountersValues()
-		log.Println("End send statistic ...")
 	}
-	return nil
 }
