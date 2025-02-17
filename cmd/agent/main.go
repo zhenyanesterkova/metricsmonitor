@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os/signal"
 	"syscall"
@@ -21,7 +22,9 @@ func main() {
 
 	metrics := metric.NewMetricBuf()
 	stats := statistic.New(metrics, cfg.PollInterval)
-	senderStat := sender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit)
+
+	address := fmt.Sprintf("http://%s/updates/", cfg.Address)
+	senderStat := sender.New(address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()

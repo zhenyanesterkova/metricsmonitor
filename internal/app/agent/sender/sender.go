@@ -76,7 +76,7 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 		return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): error close gzip.Writer - %w", err)
 	}
 
-	url := fmt.Sprintf("http://%s/updates/", s.endpoint)
+	url := s.endpoint
 
 	log.Printf("new request to url=%s, method=%s", url, http.MethodPost)
 	for _, m := range mList {
