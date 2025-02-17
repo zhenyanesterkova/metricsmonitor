@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
 
@@ -62,6 +63,21 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 		r.Route("/update/", func(r chi.Router) {
 			r.Post("/", rh.UpdateMetricJSON)
 			r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
+		})
+		r.Route("/debug/pprof/", func(r chi.Router) {
+			r.Get("/", pprof.Index)
+			r.Get("/cmdline", pprof.Cmdline)
+			r.Get("/symbol", pprof.Symbol)
+			r.Get("/trace", pprof.Trace)
+			r.Route("/profile", func(r chi.Router) {
+				r.Get("/", pprof.Profile)
+			})
+			r.Handle("/goroutine", pprof.Handler("goroutine"))
+			r.Handle("/threadcreate", pprof.Handler("threadcreate"))
+			r.Handle("/heap", pprof.Handler("heap"))
+			r.Handle("/block", pprof.Handler("block"))
+			r.Handle("/mutex", pprof.Handler("mutex"))
+			r.Handle("/allocs", pprof.Handler("allocs"))
 		})
 	})
 }
