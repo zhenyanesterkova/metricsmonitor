@@ -248,6 +248,21 @@ func TestRouter(t *testing.T) {
 			wantRespBody: "{\"value\":1.5,\"id\":\"testGauge\",\"type\":\"gauge\"}\n",
 			status:       http.StatusOK,
 		},
+		{
+			name:         "test #19: POST /update/",
+			method:       http.MethodPost,
+			url:          "/update/",
+			reqBody:      `{"type": "gauge", "id": "testGauge", "value": 3.5}`,
+			wantRespBody: "{\"value\":3.5,\"id\":\"testGauge\",\"type\":\"gauge\"}\n",
+			status:       http.StatusOK,
+		},
+		{
+			name:    "test #19: POST /updates/",
+			method:  http.MethodPost,
+			url:     "/updates/",
+			reqBody: "[{\"type\": \"gauge\", \"id\": \"testGauge\", \"value\": 3.5}, {\"type\": \"gauge\", \"id\": \"testGaugeNew\", \"value\": 5.5}, {\"type\": \"counter\", \"id\": \"testCounter\", \"delta\": 3}]",
+			status:  http.StatusOK,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
