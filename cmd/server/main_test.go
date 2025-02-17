@@ -100,6 +100,7 @@ func TestRouter(t *testing.T) {
 		url                           string
 		reqBody                       string
 		wantRespBody                  string
+		wantJSONRespBody              string
 		metricName                    string
 		wantStorageCounterMetricValue int64
 		wantStorageGaugeMetricValue   float64
@@ -249,19 +250,23 @@ func TestRouter(t *testing.T) {
 			status:       http.StatusOK,
 		},
 		{
-			name:         "test #19: POST /update/",
-			method:       http.MethodPost,
-			url:          "/update/",
-			reqBody:      `{"type": "gauge", "id": "testGauge", "value": 3.5}`,
-			wantRespBody: "{\"value\":3.5,\"id\":\"testGauge\",\"type\":\"gauge\"}\n",
-			status:       http.StatusOK,
+			name:             "test #19: POST /update/",
+			method:           http.MethodPost,
+			url:              "/update/",
+			reqBody:          `{"type": "gauge", "id": "testGauge", "value": 3.5}`,
+			wantJSONRespBody: `{"value":3.5,"id":"testGauge","type":"gauge"}`,
+			status:           http.StatusOK,
 		},
 		{
-			name:    "test #19: POST /updates/",
-			method:  http.MethodPost,
-			url:     "/updates/",
-			reqBody: "[{\"type\": \"gauge\", \"id\": \"testGauge\", \"value\": 3.5}, {\"type\": \"gauge\", \"id\": \"testGaugeNew\", \"value\": 5.5}, {\"type\": \"counter\", \"id\": \"testCounter\", \"delta\": 3}]",
-			status:  http.StatusOK,
+			name:   "test #20: POST /updates/",
+			method: http.MethodPost,
+			url:    "/updates/",
+			reqBody: `[
+				{"type": "gauge", "id": "testGauge", "value": 3.5},
+				{"type": "gauge", "id": "testGaugeNew", "value": 5.5},
+				{"type": "counter", "id": "testCounter", "delta": 3}]
+				`,
+			status: http.StatusOK,
 		},
 	}
 	for _, test := range tests {
@@ -269,7 +274,12 @@ func TestRouter(t *testing.T) {
 			resp, respBody := testRequest(t, ts, test.method, test.url, test.reqBody)
 
 			assert.Equal(t, test.status, resp.StatusCode)
-			assert.Equal(t, test.wantRespBody, respBody)
+			if test.wantJSONRespBody != "" {
+				assert.JSONEq(t, test.wantJSONRespBody, respBody)
+			}
+			if test.wantRespBody != "" {
+				assert.Equal(t, test.wantRespBody, respBody)
+			}
 
 			if test.wantStorageCounterMetricValue != 0 {
 				actualValue, err := memStorage.GetMetricValue(test.metricName, "counter")
