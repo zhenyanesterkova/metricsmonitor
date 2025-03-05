@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -29,13 +28,13 @@ func TestPostgresStorage_Ping(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		err = psg.pool.Ping(context.TODO())
+		err = psg.Ping()
 		require.NoError(t, err)
 	})
 
 	t.Run("Error", func(t *testing.T) {
 		pool.ExpectPing().WillReturnError(pingErr)
-		err = psg.pool.Ping(context.TODO())
+		err = psg.Ping()
 		require.ErrorIs(t, err, pingErr)
 	})
 }
