@@ -18,8 +18,16 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 )
 
+type IPool interface {
+	Ping(context.Context) error
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Close()
+}
+
 type PostgresStorage struct {
-	pool *pgxpool.Pool
+	pool IPool
 	log  logger.LogrusLogger
 }
 
