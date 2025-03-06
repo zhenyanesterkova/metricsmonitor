@@ -31,6 +31,8 @@ type PostgresStorage struct {
 	log  logger.LogrusLogger
 }
 
+var ErrUnknownMetricType = errors.New("failed update metrics: unknown metric type")
+
 func New(dsn string, lg logger.LogrusLogger) (*PostgresStorage, error) {
 	if err := runMigrations(dsn); err != nil {
 		return nil, fmt.Errorf("failed to run DB migrations: %w", err)
@@ -172,7 +174,7 @@ func (psg *PostgresStorage) UpdateManyMetrics(ctx context.Context, mList []metri
 				*m.Value,
 			)
 		default:
-			return errors.New("failed update metrics: unknown metric type")
+			return ErrUnknownMetricType
 		}
 		if err != nil {
 			return fmt.Errorf("failed exec query update metric: %w", err)
