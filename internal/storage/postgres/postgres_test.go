@@ -159,7 +159,6 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 		err := psg.UpdateManyMetrics(context.TODO(), arg)
 		if err != nil {
 			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
-
 		}
 	})
 
