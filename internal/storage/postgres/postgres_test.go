@@ -171,6 +171,7 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 
 		pool, err := pgxmock.NewPool()
 		require.NoError(t, err)
+		defer pool.Close()
 
 		pool.ExpectBegin()
 		pool.ExpectExec("INSERT INTO counters").
@@ -194,6 +195,7 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 
 		pool, err := pgxmock.NewPool()
 		require.NoError(t, err)
+		defer pool.Close()
 
 		pool.ExpectBegin()
 		pool.ExpectExec("INSERT INTO counters").
@@ -220,6 +222,7 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 
 		pool, err := pgxmock.NewPool()
 		require.NoError(t, err)
+		defer pool.Close()
 
 		pool.ExpectBegin().
 			WillReturnError(wantErr)
@@ -273,6 +276,130 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 
 		err := psg.UpdateManyMetrics(context.TODO(), arg)
 		if err == nil || !errors.Is(err, wantErr) {
+			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
+		}
+	})
+}
+
+func TestPostgresStorage_GetAllMetrics(t *testing.T) {
+	pool, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer pool.Close()
+
+	psg := &PostgresStorage{
+		log:  logger.NewLogrusLogger(),
+		pool: pool,
+	}
+
+	counter := metric.New(metric.TypeCounter)
+	counter.ID = "testCounter"
+	*counter.Delta = 3
+
+	gauge := metric.New(metric.TypeGauge)
+	gauge.ID = "testGauge"
+	*gauge.Value = 5.5
+
+	t.Run("Success", func(t *testing.T) {
+		wantMetricList := [][2]string{
+			{
+				"testGauge", "5.5",
+			},
+			{
+				"testCounter", "3",
+			},
+		}
+		pool.ExpectQuery("SELECT id, g_value FROM gauges;").
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id", "gVal"}).
+					AddRow(gauge.ID, *gauge.Value),
+			)
+		pool.ExpectQuery("SELECT id, delta FROM counters;").
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id", "cVal"}).
+					AddRow(counter.ID, *counter.Delta),
+			)
+
+		psg.pool = pool
+
+		metricList, err := psg.GetAllMetrics()
+		require.Equal(t, wantMetricList, metricList)
+		if err != nil {
+			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
+		}
+	})
+	t.Run("Error: get gauges", func(t *testing.T) {
+		wantErr := errors.New("failed to select all metrics from gauges table")
+
+		pool, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer pool.Close()
+		pool.ExpectQuery("SELECT id, g_value FROM gauges;").
+			WillReturnError(wantErr)
+
+		psg.pool = pool
+
+		_, err = psg.GetAllMetrics()
+		if err == nil || !errors.Is(err, wantErr) {
+			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
+		}
+	})
+	t.Run("Error: get counters", func(t *testing.T) {
+		wantErr := errors.New("failed to select all metrics from counters table")
+
+		pool, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer pool.Close()
+		pool.ExpectQuery("SELECT id, g_value FROM gauges;").
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id", "gVal"}).
+					AddRow(gauge.ID, *gauge.Value),
+			)
+		pool.ExpectQuery("SELECT id, delta FROM counters;").
+			WillReturnError(wantErr)
+
+		psg.pool = pool
+
+		_, err = psg.GetAllMetrics()
+		if err == nil || !errors.Is(err, wantErr) {
+			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
+		}
+	})
+	t.Run("Error: scan gauges", func(t *testing.T) {
+		pool, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer pool.Close()
+		pool.ExpectQuery("SELECT id, g_value FROM gauges;").
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id"}).
+					AddRow(gauge.ID),
+			)
+
+		psg.pool = pool
+
+		_, err = psg.GetAllMetrics()
+		if err == nil || !errors.Is(err, ErrScanGauges) {
+			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
+		}
+	})
+	t.Run("Error: scan counters", func(t *testing.T) {
+		pool, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer pool.Close()
+		pool.ExpectQuery("SELECT id, g_value FROM gauges;").
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id", "gVal"}).
+					AddRow(gauge.ID, *gauge.Value),
+			)
+		pool.ExpectQuery("SELECT id, delta FROM counters;").
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id"}).
+					AddRow(counter.ID),
+			)
+
+		psg.pool = pool
+
+		_, err = psg.GetAllMetrics()
+		if err == nil || !errors.Is(err, ErrScanCounters) {
 			t.Errorf("PostgresStorage.UpdateManyMetrics() error = %v", err)
 		}
 	})
