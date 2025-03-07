@@ -19,7 +19,9 @@ import (
 )
 
 var ErrScanGauges = errors.New("failed to scan gauge metric when get all metrics")
+var ErrScanGauge = errors.New("failed to scan row when get gauge metric")
 var ErrScanCounters = errors.New("failed to scan counter metric when get all metrics")
+var ErrScanCounter = errors.New("failed to scan row when get counter metric")
 
 type IPool interface {
 	Ping(context.Context) error
@@ -250,7 +252,7 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 			if errors.Is(err, pgx.ErrNoRows) {
 				return metric.Metric{}, metric.ErrUnknownMetric
 			}
-			return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
+			return metric.Metric{}, errors.Join(ErrScanGauge, err)
 		}
 		resMetric = metric.New(metric.TypeGauge)
 		resMetric.ID = id
@@ -269,7 +271,7 @@ func (psg *PostgresStorage) GetMetricValue(name, typeMetric string) (metric.Metr
 		if errors.Is(err, pgx.ErrNoRows) {
 			return metric.Metric{}, metric.ErrUnknownMetric
 		}
-		return metric.Metric{}, fmt.Errorf("failed to scan row when get metric: %w", err)
+		return metric.Metric{}, errors.Join(ErrScanCounter, err)
 	}
 	resMetric = metric.New(metric.TypeCounter)
 	resMetric.ID = id

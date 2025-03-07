@@ -404,3 +404,142 @@ func TestPostgresStorage_GetAllMetrics(t *testing.T) {
 		}
 	})
 }
+
+func TestPostgresStorage_GetMetricValue(t *testing.T) {
+	pool, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer pool.Close()
+
+	psg := &PostgresStorage{
+		log:  logger.NewLogrusLogger(),
+		pool: pool,
+	}
+
+	counter := metric.New(metric.TypeCounter)
+	counter.ID = "testCounter"
+	*counter.Delta = 3
+
+	gauge := metric.New(metric.TypeGauge)
+	gauge.ID = "testGauge"
+	*gauge.Value = 5.5
+
+	unknownGauge := metric.New(metric.TypeGauge)
+	unknownGauge.ID = "unknownTestGauge"
+	*unknownGauge.Value = 5.5
+
+	unknownCounter := metric.New(metric.TypeCounter)
+	unknownCounter.ID = "unknownTestCounter"
+	*unknownCounter.Delta = 3
+
+	t.Run("Success: get counter", func(t *testing.T) {
+		pool.ExpectQuery("SELECT id, delta FROM counters").
+			WithArgs(counter.ID).
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id", "cValue"}).
+					AddRow(counter.ID, *counter.Delta),
+			)
+
+		psg.pool = pool
+
+		got, err := psg.GetMetricValue(counter.ID, counter.MType)
+		if err != nil {
+			t.Errorf("PostgresStorage.GetMetricValue() error = %v", err)
+			return
+		}
+		require.Equal(t, counter, got)
+	})
+	t.Run("Success: get gauge", func(t *testing.T) {
+		pool.ExpectQuery("SELECT id, g_value FROM gauges").
+			WithArgs(gauge.ID).
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id", "gValue"}).
+					AddRow(gauge.ID, *gauge.Value),
+			)
+
+		psg.pool = pool
+
+		got, err := psg.GetMetricValue(gauge.ID, gauge.MType)
+		if err != nil {
+			t.Errorf("PostgresStorage.GetMetricValue() error = %v", err)
+			return
+		}
+		require.Equal(t, gauge, got)
+	})
+	t.Run("Error: get unknown counter", func(t *testing.T) {
+		pool.ExpectQuery("SELECT id, delta FROM counters").
+			WithArgs(unknownCounter.ID).
+			WillReturnRows(pgxmock.NewRows([]string{}))
+
+		psg.pool = pool
+
+		_, err := psg.GetMetricValue(unknownCounter.ID, unknownCounter.MType)
+		if err == nil || !errors.Is(err, metric.ErrUnknownMetric) {
+			t.Errorf("PostgresStorage.GetMetricValue() error = %v", err)
+			return
+		}
+	})
+	t.Run("Error: when scan counter", func(t *testing.T) {
+		pool.ExpectQuery("SELECT id, delta FROM counters").
+			WithArgs(counter.ID).
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id"}).
+					AddRow(counter.ID),
+			)
+
+		psg.pool = pool
+
+		_, err := psg.GetMetricValue(counter.ID, counter.MType)
+		psg.log.LogrusLog.Infof("Err: %v", err)
+		if err == nil || !errors.Is(err, ErrScanCounter) {
+			t.Errorf("PostgresStorage.GetMetricValue() error = %v", err)
+			return
+		}
+	})
+	t.Run("Error: get unknown gauge", func(t *testing.T) {
+		pool.ExpectQuery("SELECT id, g_value FROM gauges").
+			WithArgs(unknownGauge.ID).
+			WillReturnRows(pgxmock.NewRows([]string{}))
+
+		psg.pool = pool
+
+		_, err := psg.GetMetricValue(unknownGauge.ID, unknownGauge.MType)
+		if err == nil || !errors.Is(err, metric.ErrUnknownMetric) {
+			t.Errorf("PostgresStorage.GetMetricValue() error = %v", err)
+			return
+		}
+	})
+	t.Run("Error: when scan gauge", func(t *testing.T) {
+		pool.ExpectQuery("SELECT id, g_value FROM gauges").
+			WithArgs(gauge.ID).
+			WillReturnRows(
+				pgxmock.NewRows([]string{"id"}).
+					AddRow(gauge.ID),
+			)
+
+		psg.pool = pool
+
+		_, err := psg.GetMetricValue(gauge.ID, gauge.MType)
+		psg.log.LogrusLog.Infof("Err: %v", err)
+		if err == nil || !errors.Is(err, ErrScanGauge) {
+			t.Errorf("PostgresStorage.GetMetricValue() error = %v", err)
+			return
+		}
+	})
+}
+
+func TestPostgresStorage_Close(t *testing.T) {
+	pool, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer pool.Close()
+
+	psg := &PostgresStorage{
+		log:  logger.NewLogrusLogger(),
+		pool: pool,
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		if err := psg.Close(); err != nil {
+			t.Errorf("PostgresStorage.Close() error = %v", err)
+		}
+	})
+}
