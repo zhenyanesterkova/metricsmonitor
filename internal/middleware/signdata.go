@@ -19,19 +19,18 @@ func (lm MiddlewareStruct) CheckSignData(next http.Handler) http.Handler {
 
 		if _, ok := r.Header[http.CanonicalHeaderKey("HashSHA256")]; ok {
 			signRequestData := r.Header.Get("HashSHA256")
-			log := lm.Logger.LogrusLog
 
 			bodyBytes, err := io.ReadAll(r.Body)
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
-					log.Errorf("middleware: CheckSignData - failed read body: %v", err)
+					lm.Logger.LogrusLog.Errorf("middleware: CheckSignData - failed read body: %v", err)
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
 			}
 			err = r.Body.Close()
 			if err != nil {
-				log.Errorf("middleware: CheckSignData - failed close body: %v", err)
+				lm.Logger.LogrusLog.Errorf("middleware: CheckSignData - failed close body: %v", err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -43,7 +42,7 @@ func (lm MiddlewareStruct) CheckSignData(next http.Handler) http.Handler {
 
 			strSign, err := hex.DecodeString(signRequestData)
 			if err != nil {
-				log.Errorf("middleware: CheckSignData - failed decode hash: %v", err)
+				lm.Logger.LogrusLog.Errorf("middleware: CheckSignData - failed decode hash: %v", err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
