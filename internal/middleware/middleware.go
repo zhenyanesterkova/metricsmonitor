@@ -46,8 +46,5 @@ func (lm MiddlewareStruct) ResetRespDataStruct(next http.Handler) http.Handler {
 }
 
 func isPprofPath(path string) bool {
-	if strings.Contains(path, "/debug/pprof/") {
-		return true
-	}
-	return false
+	return strings.Contains(path, "/debug/pprof/")
 }
