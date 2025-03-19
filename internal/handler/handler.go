@@ -69,9 +69,7 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) {
 			r.Get("/cmdline", pprof.Cmdline)
 			r.Get("/symbol", pprof.Symbol)
 			r.Get("/trace", pprof.Trace)
-			r.Route("/profile", func(r chi.Router) {
-				r.Get("/", pprof.Profile)
-			})
+			r.Get("/profile", pprof.Profile)
 			r.Handle("/goroutine", pprof.Handler("goroutine"))
 			r.Handle("/threadcreate", pprof.Handler("threadcreate"))
 			r.Handle("/heap", pprof.Handler("heap"))

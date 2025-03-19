@@ -12,6 +12,11 @@ import (
 
 func (lm MiddlewareStruct) CheckSignData(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isPprofPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		if _, ok := r.Header[http.CanonicalHeaderKey("HashSHA256")]; ok {
 			signRequestData := r.Header.Get("HashSHA256")
 			log := lm.Logger.LogrusLog
