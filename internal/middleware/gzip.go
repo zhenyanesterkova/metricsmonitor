@@ -20,7 +20,11 @@ func isCompression(cType string) bool {
 
 func (lm MiddlewareStruct) GZipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log := lm.Logger.LogrusLog
+		if isPprofPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		ow := w
 
 		supportsGzip := false
@@ -42,7 +46,7 @@ func (lm MiddlewareStruct) GZipMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				err := cw.Close()
 				if err != nil {
-					log.WithFields(logrus.Fields{
+					lm.Logger.LogrusLog.WithFields(logrus.Fields{
 						"error": err,
 					}).Error("middleware: GZipMiddleware error ")
 				}
@@ -61,7 +65,7 @@ func (lm MiddlewareStruct) GZipMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				err := cr.Close()
 				if err != nil {
-					log.WithFields(logrus.Fields{
+					lm.Logger.LogrusLog.WithFields(logrus.Fields{
 						"error": err,
 					}).Error("middleware: GZipMiddleware error ")
 				}

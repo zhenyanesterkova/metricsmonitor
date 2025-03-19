@@ -7,6 +7,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.7.1
+	github.com/pashagolub/pgxmock/v4 v4.5.0
 	github.com/shirou/gopsutil/v4 v4.24.11
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0

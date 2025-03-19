@@ -30,6 +30,7 @@ func (rh *RepositorieHandler) GetAllMetrics(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
 
 	err = tmplMetrics.ExecuteTemplate(w, "metrics", res)
 	if err != nil {
@@ -57,6 +58,7 @@ func (rh *RepositorieHandler) GetMetricValue(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(res.String()))
 }
 
@@ -84,6 +86,7 @@ func (rh *RepositorieHandler) GetMetricValueJSON(w http.ResponseWriter, r *http.
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(res); err != nil {
@@ -103,4 +106,6 @@ func (rh *RepositorieHandler) Ping(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, TextServerError, http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
