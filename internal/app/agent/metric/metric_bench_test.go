@@ -18,37 +18,37 @@ func BenchmarkMetric(b *testing.B) {
 	*metricCounter.Delta = 3
 
 	b.Run("Counter: String()", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = metricCounter.String()
 		}
 	})
 
 	b.Run("Gauge: String()", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = metricGauge.String()
 		}
 	})
 
 	b.Run("Counter: StringValue()", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = metricCounter.StringValue()
 		}
 	})
 
 	b.Run("Gauge: StringValue()", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = metricGauge.StringValue()
 		}
 	})
 
 	b.Run("Gauge: updateGauge()", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			metricGauge.updateGauge(3.5)
 		}
 	})
 
 	b.Run("Counter: updateCounter()", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			metricCounter.updateCounter()
 		}
 	})

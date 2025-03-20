@@ -16,12 +16,12 @@ type Backoff struct {
 	nextDelay  time.Duration
 }
 
-func New(min, max time.Duration, maxAttempt int) *Backoff {
+func New(minDelay, maxDelay time.Duration, maxAttempt int) *Backoff {
 	return &Backoff{
-		min:        min,
-		max:        max,
+		min:        minDelay,
+		max:        maxDelay,
 		maxAttempt: maxAttempt,
-		nextDelay:  min,
+		nextDelay:  minDelay,
 	}
 }
 
