@@ -12,6 +12,30 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
 )
 
+// UpdateMetric handles HTTP requests to update a specific metric value.
+//
+// URL Parameters:
+//   - typeMetric: The type of the metric (gauge, counter).
+//   - nameMetric: The name of the metric to update.
+//   - valueMetric: The new value for the metric.
+//
+// Supported Metric Types:
+//   - Gauge: Floating value.
+//   - Counter: Integer value.
+//
+// HTTP Response:
+//
+// Sets appropriate HTTP status codes:
+//
+//   - 200 OK: Successful update.
+//   - 400 Bad Request: Invalid metric type or value.
+//   - 404 Not Found: Invalid metric name.
+//   - 500 Internal Server Error: Other errors.
+//
+// Example usage in HTTP request:
+//
+//	POST /update/gauge/Alloc/22.5
+//	POST /update/counter/PollCount/3
 func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
 
@@ -69,6 +93,56 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 }
 
+// UpdateMetricJSON handles HTTP requests to update a specific metric value via JSON payload.
+//
+// HTTP Request:
+// - Accepts a JSON payload with metric details.
+// - Example request body:
+//
+// for counter metric:
+//
+//	{
+//	  "ID": "metric_name",
+//	  "MType": "metric_type",
+//	  "Delta": 100
+//	}
+//
+// for gauge metric:
+//
+//	{
+//	  "ID": "metric_name",
+//	  "MType": "metric_type",
+//	  "Value": 5.5
+//	}
+//
+// HTTP Response:
+//
+// - Returns the updated metric in JSON format.
+//
+// - Sets appropriate HTTP status codes:
+//   - 200 OK: Successful update
+//   - 400 Bad Request: Invalid metric type or value
+//   - 404 Not Found: Invalid metric name
+//   - 500 Internal Server Error: Other errors
+//
+// Example usage in HTTP request:
+//
+//	POST /update/
+//	Content-Type: application/json
+//
+//	{
+//	  "ID": "TotalAlloc",
+//	  "MType": "gauge",
+//	  "Value": 22.5
+//	}
+//
+// Example response:
+//
+//	{
+//	  "ID": "TotalAlloc",
+//	  "MType": "gauge",
+//	  "Value": 22.5
+//	}
 func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
 
@@ -118,6 +192,48 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// UpdateManyMetrics handles HTTP requests to update multiple metrics in a single request.
+//
+// HTTP Request:
+//
+// - Accepts a JSON array of metric objects
+//
+// - Example request body:
+//
+//	[
+//	    {
+//	        "ID": "metric1",
+//	        "MType": "gauge",
+//	        "Value": 22.5
+//	    },
+//	    {
+//	        "ID": "metric2",
+//	        "MType": "counter",
+//	        "Delta": 100
+//	    }
+//	]
+//
+// HTTP Response:
+//   - Returns 200 OK if all metrics are updated successfully
+//   - Returns 500 Internal Server Error if there's an error during processing
+//
+// Example usage in HTTP request:
+//
+//	POST /updates/
+//	Content-Type: application/json
+//
+//	[
+//	    {
+//	        "ID": "TotalAlloc",
+//	        "MType": "gauge",
+//	        "Value": 22.5
+//	    },
+//	    {
+//	        "ID": "PollCount",
+//	        "MType": "counter",
+//	        "Delta": 100
+//	    }
+//	]
 func (rh *RepositorieHandler) UpdateManyMetrics(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
 

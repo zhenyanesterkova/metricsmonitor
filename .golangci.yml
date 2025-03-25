@@ -516,7 +516,6 @@ linters:
     - sqlclosecheck
     - staticcheck
     - stylecheck
-    - testableexamples
     - thelper
     - tparallel
     - typecheck

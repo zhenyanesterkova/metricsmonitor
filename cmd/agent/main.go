@@ -1,3 +1,4 @@
+// An agent (HTTP client) for collecting runtime metrics and then sending them to the server over the HTTP protocol.
 package main
 
 import (
