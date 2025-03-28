@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"bytes"
@@ -15,7 +15,6 @@ import (
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
 )
@@ -87,7 +86,7 @@ func TestRouter(t *testing.T) {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, nil)
+	repoHandler := NewRepositorieHandler(memStorage, loggerInst, nil)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)
