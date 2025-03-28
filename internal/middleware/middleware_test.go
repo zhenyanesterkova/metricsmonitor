@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"compress/gzip"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,7 +20,7 @@ const (
 type headerParams struct {
 	acceptEncoding  []string
 	accept          string
-	contentEncoding []string
+	contentEncoding string
 }
 
 func testRequest(
@@ -33,8 +34,17 @@ func testRequest(
 	t.Helper()
 
 	var buff bytes.Buffer
-	_, err := buff.WriteString(reqBody)
-	require.NoError(t, err)
+	if headersParams.contentEncoding == "gzip" {
+		gzWriter := gzip.NewWriter(&buff)
+		defer func() {
+			err := gzWriter.Close()
+			require.NoError(t, err)
+		}()
+		_, _ = gzWriter.Write([]byte(reqBody))
+	} else {
+		_, err := buff.WriteString(reqBody)
+		require.NoError(t, err)
+	}
 
 	req, err := http.NewRequest(method, ts.URL+path, &buff)
 	require.NoError(t, err)
@@ -43,9 +53,7 @@ func testRequest(
 		req.Header.Add("Accept-Encoding", enc)
 	}
 	req.Header.Add("Accept", headersParams.accept)
-	for _, enc := range headersParams.contentEncoding {
-		req.Header.Add("Content-Encoding", enc)
-	}
+	req.Header.Add("Content-Encoding", headersParams.contentEncoding)
 
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
@@ -92,7 +100,7 @@ func TestMiddleware(t *testing.T) {
 		params := headerParams{
 			acceptEncoding:  []string{},
 			accept:          "",
-			contentEncoding: []string{},
+			contentEncoding: "",
 		}
 		resp := testRequest(
 			t,
@@ -131,7 +139,7 @@ func TestMiddleware(t *testing.T) {
 		params := headerParams{
 			acceptEncoding:  []string{"gzip"},
 			accept:          "application/json",
-			contentEncoding: []string{"gzip"},
+			contentEncoding: "gzip",
 		}
 		resp := testRequest(
 			t,
