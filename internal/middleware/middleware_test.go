@@ -3,6 +3,9 @@ package middleware
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,6 +58,11 @@ func testRequest(
 	req.Header.Add("Accept", headersParams.accept)
 	req.Header.Add("Content-Encoding", headersParams.contentEncoding)
 
+	h := hmac.New(sha256.New, []byte(hashKey))
+	h.Write(buff.Bytes())
+	sum := hex.EncodeToString(h.Sum(nil))
+	req.Header.Set("HashSHA256", sum)
+
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
 
@@ -80,7 +88,7 @@ func TestMiddleware(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("success ping req"))
 		})
-		r.Get("/gzip", func(w http.ResponseWriter, r *http.Request) {
+		r.Post("/gzip", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Header().Add("Content-Type", "application/json")
 			_, _ = w.Write([]byte("{}"))
@@ -135,7 +143,7 @@ func TestMiddleware(t *testing.T) {
 		require.Equal(t, mdlWare.respData.responseData.status, 200)
 	})
 
-	t.Run("GZipMiddleware", func(t *testing.T) {
+	t.Run("Middleware", func(t *testing.T) {
 		params := headerParams{
 			acceptEncoding:  []string{"gzip"},
 			accept:          "application/json",
@@ -152,6 +160,8 @@ func TestMiddleware(t *testing.T) {
 
 		got := resp.Header.Get("Content-Encoding")
 		require.Equal(t, "gzip", got)
+
+		require.Equal(t, 200, resp.StatusCode)
 
 		err := resp.Body.Close()
 		require.NoError(t, err)
