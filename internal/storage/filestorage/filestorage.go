@@ -80,10 +80,8 @@ func (fs *FileStorage) readStorage() error {
 		return nil
 	}
 
-	data := fs.r.Reader.Bytes()
-
 	memento := fs.MemStorage.CreateMemento()
-	err := json.Unmarshal(data, memento)
+	err := json.Unmarshal(fs.r.Reader.Bytes(), memento)
 	if err != nil {
 		return fmt.Errorf("rwfile: func ReadSnapStorage() - %w", err)
 	}

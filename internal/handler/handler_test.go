@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"bytes"
@@ -15,14 +15,18 @@ import (
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
-	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/memstorage"
 	"github.com/zhenyanesterkova/metricsmonitor/web"
 )
 
-func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, reqBody string) (*http.Response, string) {
 	t.Helper()
-	req, err := http.NewRequest(method, ts.URL+path, http.NoBody)
+
+	var buff bytes.Buffer
+	_, err := buff.WriteString(reqBody)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(method, ts.URL+path, &buff)
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Do(req)
@@ -82,7 +86,7 @@ func TestRouter(t *testing.T) {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(memStorage, loggerInst, nil)
+	repoHandler := NewRepositorieHandler(memStorage, loggerInst, nil)
 	repoHandler.InitChiRouter(router)
 
 	ts := httptest.NewServer(router)
@@ -93,7 +97,9 @@ func TestRouter(t *testing.T) {
 		name                          string
 		method                        string
 		url                           string
+		reqBody                       string
 		wantRespBody                  string
+		wantJSONRespBody              string
 		metricName                    string
 		wantStorageCounterMetricValue int64
 		wantStorageGaugeMetricValue   float64
@@ -227,13 +233,52 @@ func TestRouter(t *testing.T) {
 			wantRespBody: "",
 			status:       http.StatusMethodNotAllowed,
 		},
+		{
+			name:         "test #17: GET /ping",
+			method:       http.MethodGet,
+			url:          "/ping",
+			wantRespBody: "",
+			status:       http.StatusOK,
+		},
+		{
+			name:         "test #18: POST /value/",
+			method:       http.MethodPost,
+			url:          "/value/",
+			reqBody:      `{"type": "gauge", "id": "testGauge"}`,
+			wantRespBody: "{\"value\":1.5,\"id\":\"testGauge\",\"type\":\"gauge\"}\n",
+			status:       http.StatusOK,
+		},
+		{
+			name:             "test #19: POST /update/",
+			method:           http.MethodPost,
+			url:              "/update/",
+			reqBody:          `{"type": "gauge", "id": "testGauge", "value": 3.5}`,
+			wantJSONRespBody: `{"value":3.5,"id":"testGauge","type":"gauge"}`,
+			status:           http.StatusOK,
+		},
+		{
+			name:   "test #20: POST /updates/",
+			method: http.MethodPost,
+			url:    "/updates/",
+			reqBody: `[
+				{"type": "gauge", "id": "testGauge", "value": 3.5},
+				{"type": "gauge", "id": "testGaugeNew", "value": 5.5},
+				{"type": "counter", "id": "testCounter", "delta": 3}]
+				`,
+			status: http.StatusOK,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, respBody := testRequest(t, ts, test.method, test.url)
+			resp, respBody := testRequest(t, ts, test.method, test.url, test.reqBody)
 
 			assert.Equal(t, test.status, resp.StatusCode)
-			assert.Equal(t, test.wantRespBody, respBody)
+			if test.wantJSONRespBody != "" {
+				assert.JSONEq(t, test.wantJSONRespBody, respBody)
+			}
+			if test.wantRespBody != "" {
+				assert.Equal(t, test.wantRespBody, respBody)
+			}
 
 			if test.wantStorageCounterMetricValue != 0 {
 				actualValue, err := memStorage.GetMetricValue(test.metricName, "counter")

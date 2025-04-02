@@ -1,3 +1,4 @@
+// A server for collecting runtime metrics that collects reports from agents over the HTTP protocol.
 package main
 
 import (

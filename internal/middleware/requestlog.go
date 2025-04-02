@@ -9,12 +9,15 @@ import (
 
 func (lm MiddlewareStruct) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log := lm.Logger.LogrusLog
+		if isPprofPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		start := time.Now()
 
 		defer func() {
-			log.WithFields(logrus.Fields{
+			lm.Logger.LogrusLog.WithFields(logrus.Fields{
 				"URI":      r.URL.Path,
 				"Method":   r.Method,
 				"Duration": time.Since(start),
