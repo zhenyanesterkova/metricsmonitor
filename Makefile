@@ -28,4 +28,12 @@ _golangci-lint-rm-unformatted-report: _golangci-lint-format-report
 
 .PHONY: golangci-lint-clean
 golangci-lint-clean:
-	sudo rm -rf ./golangci-lint 
+	sudo rm -rf ./golangci-lint
+
+.PHONY: staticlint
+staticlint:
+	./staticlint.exe -exitcheck.exclude="go-build" ./... 
+
+.PHONY: staticlint-build
+staticlint-build:
+	go build ./cmd/staticlint

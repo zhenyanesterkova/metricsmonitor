@@ -169,17 +169,17 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 			gauge,
 		}
 
-		pool, err := pgxmock.NewPool()
+		poolErrUpC, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		defer pool.Close()
+		defer poolErrUpC.Close()
 
-		pool.ExpectBegin()
-		pool.ExpectExec("INSERT INTO counters").
+		poolErrUpC.ExpectBegin()
+		poolErrUpC.ExpectExec("INSERT INTO counters").
 			WithArgs(arg[0].ID, *arg[0].Delta).
 			WillReturnError(wantErr)
-		pool.ExpectRollback()
+		poolErrUpC.ExpectRollback()
 
-		psg.pool = pool
+		psg.pool = poolErrUpC
 
 		err = psg.UpdateManyMetrics(context.TODO(), arg)
 		if err == nil || !errors.Is(err, wantErr) {
@@ -193,20 +193,20 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 			gauge,
 		}
 
-		pool, err := pgxmock.NewPool()
+		poolErrUpG, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		defer pool.Close()
+		defer poolErrUpG.Close()
 
-		pool.ExpectBegin()
-		pool.ExpectExec("INSERT INTO counters").
+		poolErrUpG.ExpectBegin()
+		poolErrUpG.ExpectExec("INSERT INTO counters").
 			WithArgs(arg[0].ID, *arg[0].Delta).
 			WillReturnResult(pgxmock.NewResult("", 0))
-		pool.ExpectExec("INSERT INTO gauges").
+		poolErrUpG.ExpectExec("INSERT INTO gauges").
 			WithArgs(arg[1].ID, *arg[1].Value).
 			WillReturnError(wantErr)
-		pool.ExpectRollback()
+		poolErrUpG.ExpectRollback()
 
-		psg.pool = pool
+		psg.pool = poolErrUpG
 
 		err = psg.UpdateManyMetrics(context.TODO(), arg)
 		if err == nil || !errors.Is(err, wantErr) {
@@ -220,15 +220,15 @@ func TestPostgresStorage_UpdateManyMetrics(t *testing.T) {
 			gauge,
 		}
 
-		pool, err := pgxmock.NewPool()
+		poolErrBegin, err := pgxmock.NewPool()
 		require.NoError(t, err)
-		defer pool.Close()
+		defer poolErrBegin.Close()
 
-		pool.ExpectBegin().
+		poolErrBegin.ExpectBegin().
 			WillReturnError(wantErr)
-		pool.ExpectRollback()
+		poolErrBegin.ExpectRollback()
 
-		psg.pool = pool
+		psg.pool = poolErrBegin
 
 		err = psg.UpdateManyMetrics(context.TODO(), arg)
 		if err == nil || !errors.Is(err, wantErr) {

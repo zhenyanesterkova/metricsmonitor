@@ -143,12 +143,12 @@ func TestMemStorage_UpdateMetric(t *testing.T) {
 	invalidTypeGauge.ID = "testGauge"
 
 	tests := []struct {
-		name    string
+		err     error
 		s       *MemStorage
 		arg     metric.Metric
 		want    metric.Metric
+		name    string
 		wantErr bool
-		err     error
 	}{
 		{
 			name:    "success update counter",
