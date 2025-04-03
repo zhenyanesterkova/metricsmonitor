@@ -14,6 +14,10 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/statistic"
 )
 
+var buildVersion = "N/A"
+var buildDate = "N/A"
+var buildCommit = "N/A"
+
 func main() {
 	cfg := config.New()
 	err := cfg.Build()
@@ -31,6 +35,10 @@ func main() {
 	defer stop()
 
 	errCh := make(chan error)
+
+	log.Printf("Build version: %s\n", buildVersion)
+	log.Printf("Build date: %s\n", buildDate)
+	log.Printf("Build commit: %s\n", buildCommit)
 
 	updateCtx := context.WithoutCancel(ctx)
 	go stats.UpdateStatistic(updateCtx)
