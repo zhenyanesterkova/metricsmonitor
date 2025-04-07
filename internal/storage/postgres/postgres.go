@@ -138,10 +138,10 @@ func (psg *PostgresStorage) UpdateManyMetrics(ctx context.Context, mList []metri
 	}
 
 	defer func() {
-		err := tx.Rollback(ctx)
-		if err != nil {
-			if !errors.Is(err, pgx.ErrTxClosed) {
-				log.Errorf("failed rolls back the transaction: %v", err)
+		rollbackErr := tx.Rollback(ctx)
+		if rollbackErr != nil {
+			if !errors.Is(rollbackErr, pgx.ErrTxClosed) {
+				log.Errorf("failed rolls back the transaction: %v", rollbackErr)
 			}
 		}
 	}()
@@ -208,8 +208,8 @@ func (psg *PostgresStorage) GetAllMetrics() ([][2]string, error) {
 	var id string
 	var gVal float64
 	for rowsGauge.Next() {
-		if err := rowsGauge.Scan(&id, &gVal); err != nil {
-			return res, errors.Join(ErrScanGauges, err)
+		if errScan := rowsGauge.Scan(&id, &gVal); errScan != nil {
+			return res, errors.Join(ErrScanGauges, errScan)
 		}
 		res = append(res, [2]string{id, strconv.FormatFloat(gVal, 'g', -1, 64)})
 	}
