@@ -1,3 +1,6 @@
+// Analyzer checks for direct calls to os.Exit in the main function of the main package.
+//
+// This analyzer detects and reports direct usage of os.Exit within the main function.
 package main
 
 import (
@@ -13,6 +16,7 @@ var ExitCheckAnalyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
+// -exclude flag excluding directories for analysis.
 var exclude string // -exclude flag
 var excludeDoc = `excluding directories for analysis; 
 you must specify the directories separated by commas; 

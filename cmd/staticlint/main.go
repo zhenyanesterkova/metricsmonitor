@@ -1,3 +1,104 @@
+// This package is a multichecker - tool for static code analysis in Go.
+//
+// Multichecker provides a set of checks to ensure code quality.
+// It can be used as part of the development workflow to identify
+// potential issues in the source code.
+//
+// Running the tool:
+//
+// There are two ways to run Multichecker:
+//
+// 1. Via Makefile:
+//   - Run the command `make staticlint-build` to build
+//   - Then run `make staticlint` to start the checks
+//
+// 2. Directly:
+//   - Build the package: `go build ./cmd/staticlint`
+//   - Run with necessary parameters:
+//
+// `./staticlint.exe -exitcheck.exclude="/dir-name/" ./...`
+//
+// Running parameters:
+// `-exitcheck.exclude="/dir-name/, dir-name1, /dir-name2/dir-name3"` - allows excluding certain checks
+// from the analysis process.
+//
+// Scope of application:
+// The tool recursively analyzes all packages in the current directory
+// (specified via `./...`).
+//
+// It includes:
+//
+// - Standard analyzers from golang.org/x/tools/go/analysis/passes
+//
+//   - astalias: detects type alias usage in AST
+//
+//   - assign: checks for incorrect assignments
+//
+//   - atomic: finds issues with atomic operations
+//
+//   - bidirimports: checks for bidirectional imports
+//
+//   - buildtags: analyzes build tags
+//
+//   - composite: detects unnecessary composite literals
+//
+//   - ctxchecks: checks context usage
+//
+//   - deadcode: finds unused code
+//
+//   - depgraph: analyzes package dependencies
+//
+//   - errorsas: checks errors.As usage
+//
+//   - exportlocal: detects exported locals
+//
+//   - fieldalignment: optimizes struct field alignment
+//
+//   - govet: basic code checks
+//
+//   - httpresponse: checks http.ResponseWriter usage
+//
+//   - interfacetypes: analyzes interface type assertions
+//
+//   - nilness: tracks potential nil values
+//
+//   - printf: checks printf-style format strings
+//
+//   - shadow: detects variable shadowing
+//
+//   - simplespread: checks slice spreading
+//
+//   - structtag: validates struct tags
+//
+//   - typeparam: checks generics
+//
+//   - unused: finds unused identifiers
+//
+//   - varcheck: checks unused variables
+//
+// - Analyzers from staticcheck.io.
+// Provides an extended set of checks including:
+//
+//   - Type and assertion checks
+//
+//   - Performance analysis
+//
+//   - Potential bug detection
+//
+//   - Style checks
+//
+//   - Package usage optimization
+//
+// - Errcheck analyzer from github.com/kisielk/errcheck/errcheck.
+// Checks error handling in the code:
+//
+//   - Detects unchecked errors
+//
+//   - Analyzes function results
+//
+//   - Verifies error handling correctness
+//
+// - exitcheck analyzer detects and reports direct usage of os.Exit within the main function.
 package main
 
 import (
