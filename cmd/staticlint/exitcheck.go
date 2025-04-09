@@ -31,7 +31,7 @@ func run(pass *analysis.Pass) (any, error) {
 
 	for _, file := range pass.Files {
 		for _, excludePath := range excludeDirs {
-			if strings.Contains(pass.Fset.Position(file.Package).Filename, excludePath) {
+			if excludePath != "" && strings.Contains(pass.Fset.Position(file.Package).Filename, excludePath) {
 				//nolint:all //declaration of the run function
 				// of the field of the ExitCheckAnalyzer structure
 				// requires the return of any, erorr (nilnil linter error)
