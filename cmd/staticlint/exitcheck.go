@@ -30,32 +30,49 @@ func run(pass *analysis.Pass) (any, error) {
 	excludeDirs := strings.Split(exclude, ",")
 
 	for _, file := range pass.Files {
-		fileInExclude := false
 		for _, excludePath := range excludeDirs {
 			if strings.Contains(pass.Fset.Position(file.Package).Filename, excludePath) {
-				fileInExclude = true
-				break
+				//nolint:all //declaration of the run function
+				// of the field of the ExitCheckAnalyzer structure
+				// requires the return of any, erorr (nilnil linter error)
+				return nil, nil
 			}
 		}
-		if !fileInExclude && file.Name.String() == "main" {
-			ast.Inspect(file, func(curNode ast.Node) bool {
-				if mainFunc, ok := curNode.(*ast.FuncDecl); ok && mainFunc.Name.String() == "main" {
-					ast.Inspect(mainFunc, func(node ast.Node) bool {
-						if expr, ok := node.(*ast.CallExpr); ok {
-							if selector, ok := expr.Fun.(*ast.SelectorExpr); ok {
-								if identifier, ok := selector.X.(*ast.Ident); ok {
-									if selector.Sel.Name == "Exit" && identifier.Name == "os" {
-										pass.Reportf(identifier.NamePos, "Detected direct call to os.Exit in the main function of the main package")
-									}
-								}
-							}
-						}
-						return true
-					})
+		if file.Name.String() != "main" {
+			//nolint:all //declaration of the run function
+			// of the field of the ExitCheckAnalyzer structure
+			// requires the return of any, erorr (nilnil linter error)
+			return nil, nil
+		}
+		ast.Inspect(file, func(curNode ast.Node) bool {
+			var mainFunc *ast.FuncDecl
+			var ok bool
+			if mainFunc, ok = curNode.(*ast.FuncDecl); !ok || mainFunc.Name.String() != "main" {
+				return true
+			}
+			ast.Inspect(mainFunc, func(node ast.Node) bool {
+				var expr *ast.CallExpr
+				var ok bool
+				if expr, ok = node.(*ast.CallExpr); !ok {
+					return true
 				}
+				var selector *ast.SelectorExpr
+				if selector, ok = expr.Fun.(*ast.SelectorExpr); !ok {
+					return true
+				}
+				var identifier *ast.Ident
+				if identifier, ok = selector.X.(*ast.Ident); !ok {
+					return true
+				}
+				if selector.Sel.Name == "Exit" && identifier.Name == "os" {
+					pass.Reportf(identifier.NamePos, "Detected direct call to os.Exit in the main function of the main package")
+				}
+
 				return true
 			})
-		}
+
+			return true
+		})
 	}
 
 	//nolint:all //declaration of the run function
