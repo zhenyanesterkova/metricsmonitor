@@ -21,6 +21,10 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/retrystorage"
 )
 
+var buildVersion = "N/A"
+var buildDate = "N/A"
+var buildCommit = "N/A"
+
 func main() {
 	if err := run(); err != nil {
 		log.Fatalf("server error: %v", err)
@@ -79,6 +83,10 @@ func run() error {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+
+	loggerInst.LogrusLog.Infof("Build version: %s\n", buildVersion)
+	loggerInst.LogrusLog.Infof("Build date: %s\n", buildDate)
+	loggerInst.LogrusLog.Infof("Build commit: %s\n", buildCommit)
 
 	loggerInst.LogrusLog.Infof("Start Server on %s", cfg.SConfig.Address)
 	go func() {

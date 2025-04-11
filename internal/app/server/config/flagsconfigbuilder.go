@@ -8,7 +8,15 @@ import (
 	"time"
 )
 
-func (c *Config) setFlagsVariables() error {
+type flags struct {
+	hashKey         *string
+	fileStoragePath string
+	dsn             string
+	tempDur         int
+	restore         bool
+}
+
+func (c *Config) parseFlagsVariables() flags {
 	flag.StringVar(
 		&c.SConfig.Address,
 		"a",
@@ -65,12 +73,23 @@ func (c *Config) setFlagsVariables() error {
 
 	flag.Parse()
 
+	res := flags{
+		fileStoragePath: fileStoragePath,
+		tempDur:         tempDur,
+		restore:         restore,
+		dsn:             dsn,
+		hashKey:         &hashKey,
+	}
+	return res
+}
+
+func (c *Config) setFlagsVariables(f flags) error {
 	if isFlagPassed("f") {
-		c.DBConfig.FileStorageConfig.FileStoragePath = fileStoragePath
+		c.DBConfig.FileStorageConfig.FileStoragePath = f.fileStoragePath
 	}
 
 	if isFlagPassed("i") {
-		dur, err := time.ParseDuration(strconv.Itoa(tempDur) + "s")
+		dur, err := time.ParseDuration(strconv.Itoa(f.tempDur) + "s")
 		if err != nil {
 			return errors.New("can not parse store interval as duration " + err.Error())
 		}
@@ -78,27 +97,28 @@ func (c *Config) setFlagsVariables() error {
 	}
 
 	if isFlagPassed("r") {
-		c.DBConfig.FileStorageConfig.Restore = restore
+		c.DBConfig.FileStorageConfig.Restore = f.restore
 	}
 
 	if isFlagPassed("d") {
 		if c.DBConfig.PostgresConfig == nil {
 			c.DBConfig.PostgresConfig = &PostgresConfig{}
 		}
-		c.DBConfig.PostgresConfig.DSN = dsn
+		c.DBConfig.PostgresConfig.DSN = f.dsn
 	}
 
 	if isFlagPassed("k") {
-		c.SConfig.HashKey = &hashKey
+		c.SConfig.HashKey = f.hashKey
 	}
 
 	return nil
 }
 
 func (c *Config) flagBuild() error {
-	err := c.setFlagsVariables()
+	flagsVar := c.parseFlagsVariables()
+	err := c.setFlagsVariables(flagsVar)
 	if err != nil {
-		return fmt.Errorf("config func flagBuild(): %w", err)
+		return fmt.Errorf("failed set cfg from flags var: %w", err)
 	}
 	return nil
 }

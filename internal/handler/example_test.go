@@ -8,9 +8,9 @@ import (
 
 func ExampleRepositorieHandler_UpdateMetricJSON() {
 	type Metric struct {
+		Value *float64 `json:"value,omitempty"`
 		ID    string   `json:"id"`
 		MType string   `json:"type"`
-		Value *float64 `json:"value,omitempty"`
 	}
 	// Create a new HTTP client
 	client := &http.Client{}
@@ -76,10 +76,10 @@ func ExampleRepositorieHandler_UpdateMetric() {
 
 func ExampleRepositorieHandler_UpdateManyMetrics() {
 	type Metric struct {
-		ID    string   `json:"id"`
-		MType string   `json:"type"`
 		Value *float64 `json:"value,omitempty"`
 		Delta *int64   `json:"delta,omitempty"`
+		ID    string   `json:"id"`
+		MType string   `json:"type"`
 	}
 	// Create a new HTTP client
 	client := &http.Client{}
