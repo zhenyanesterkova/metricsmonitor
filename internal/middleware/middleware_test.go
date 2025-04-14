@@ -21,9 +21,9 @@ const (
 )
 
 type headerParams struct {
-	acceptEncoding  []string
 	accept          string
 	contentEncoding string
+	acceptEncoding  []string
 }
 
 func testRequest(
