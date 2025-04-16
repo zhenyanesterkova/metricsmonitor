@@ -53,3 +53,20 @@ func Test_GenerateKeyPair(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func Test_checkKeyFileExists(t *testing.T) {
+	exists, err := checkKeyFileExists("./notexists")
+	require.NoError(t, err)
+	require.Equal(t, false, exists)
+
+	tempDir, err := os.MkdirTemp("", "exists")
+	require.NoError(t, err)
+	defer func() {
+		err := os.RemoveAll(tempDir)
+		require.NoError(t, err)
+	}()
+
+	exists, err = checkKeyFileExists(tempDir)
+	require.NoError(t, err)
+	require.Equal(t, true, exists)
+}
