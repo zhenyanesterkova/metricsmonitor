@@ -71,6 +71,13 @@ func (c *Config) parseFlagsVariables() flags {
 		"hash key",
 	)
 
+	flag.StringVar(
+		&c.SConfig.CryptoKeyPath,
+		"k",
+		c.SConfig.CryptoKeyPath,
+		"path to the file with the private key",
+	)
+
 	flag.Parse()
 
 	res := flags{

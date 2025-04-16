@@ -15,7 +15,8 @@ type Config struct {
 func New() *Config {
 	return &Config{
 		SConfig: ServerConfig{
-			Address: DefaultServerAddress,
+			Address:       DefaultServerAddress,
+			CryptoKeyPath: DefaultCryptoKeyPath,
 		},
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,

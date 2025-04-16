@@ -15,6 +15,9 @@ func (c *Config) setEnvServerConfig() {
 	if envHashKey, ok := os.LookupEnv("KEY"); ok {
 		c.SConfig.HashKey = &envHashKey
 	}
+	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_KEY"); ok {
+		c.SConfig.CryptoKeyPath = envCryptoKeyPath
+	}
 }
 
 func (c *Config) setEnvLoggerConfig() {

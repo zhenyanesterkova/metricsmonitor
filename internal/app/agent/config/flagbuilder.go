@@ -10,6 +10,7 @@ import (
 
 func (c *Config) setFlags() error {
 	flag.StringVar(&c.Address, "a", c.Address, "address and port to run server")
+	flag.StringVar(&c.CryptoKeyPath, "a", c.CryptoKeyPath, "address and port to run server")
 
 	var key string
 	flag.StringVar(&key, "k", "", "hash key")
