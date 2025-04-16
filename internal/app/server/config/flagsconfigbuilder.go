@@ -72,9 +72,16 @@ func (c *Config) parseFlagsVariables() flags {
 	)
 
 	flag.StringVar(
-		&c.SConfig.CryptoKeyPath,
+		&c.SConfig.CryptoPrivateKeyPath,
 		"crypto-key",
-		c.SConfig.CryptoKeyPath,
+		c.SConfig.CryptoPrivateKeyPath,
+		"path to the file with the private key",
+	)
+
+	flag.StringVar(
+		&c.SConfig.CryptoPublicKeyPath,
+		"crypto-pub-key",
+		c.SConfig.CryptoPublicKeyPath,
 		"path to the file with the private key",
 	)
 

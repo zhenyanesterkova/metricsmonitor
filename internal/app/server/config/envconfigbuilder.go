@@ -16,7 +16,11 @@ func (c *Config) setEnvServerConfig() {
 		c.SConfig.HashKey = &envHashKey
 	}
 	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_KEY"); ok {
-		c.SConfig.CryptoKeyPath = envCryptoKeyPath
+		c.SConfig.CryptoPrivateKeyPath = envCryptoKeyPath
+	}
+
+	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_PUB_KEY"); ok {
+		c.SConfig.CryptoPublicKeyPath = envCryptoKeyPath
 	}
 }
 
