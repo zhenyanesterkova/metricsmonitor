@@ -85,8 +85,17 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst, cfg.SConfig.HashKey)
-	repoHandler.InitChiRouter(router)
+	repoHandler := handler.NewRepositorieHandler(
+		retryStore,
+		loggerInst,
+		cfg.SConfig.HashKey,
+		cfg.SConfig.CryptoPrivateKeyPath,
+	)
+	err = repoHandler.InitChiRouter(router)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("can not init router: %v", err)
+		return fmt.Errorf("failed init router: %w", err)
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
