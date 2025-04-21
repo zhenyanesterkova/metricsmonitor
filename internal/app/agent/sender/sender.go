@@ -4,22 +4,34 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/hmac"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
+)
+
+const (
+	aesKeySize = 32
 )
 
 type Sender struct {
 	report                  ReportData
 	client                  *http.Client
 	hashKey                 *string
+	publicKey               *rsa.PublicKey
 	endpoint                string
 	requestAttemptIntervals []string
 	reportInterval          time.Duration
@@ -36,7 +48,22 @@ func New(
 	buff *metric.MetricBuf,
 	hashKey *string,
 	rateLimit int,
-) *Sender {
+	pathToPublicKey string,
+) (*Sender, error) {
+	publicKeyPEM, err := os.ReadFile(pathToPublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed read public key from file: %w", err)
+	}
+
+	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
+	publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed parses a public key in PKIX, ASN.1 DER form: %w", err)
+	}
+	publicKeyRsa, ok := publicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("failed converting type to *rsa.PublicKey: %w", err)
+	}
 	return &Sender{
 		client:         &http.Client{},
 		endpoint:       addr,
@@ -51,7 +78,8 @@ func New(
 		},
 		hashKey:   hashKey,
 		rateLimit: rateLimit,
-	}
+		publicKey: publicKeyRsa,
+	}, nil
 }
 
 func (s *Sender) SendQueryUpdateMetrics() error {
@@ -76,6 +104,42 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 		return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): error close gzip.Writer - %w", err)
 	}
 
+	aesKey := make([]byte, aesKeySize)
+	_, err = rand.Read(aesKey)
+	if err != nil {
+		return fmt.Errorf("failed to generate AES key: %w", err)
+	}
+
+	iv := make([]byte, aes.BlockSize)
+	_, err = rand.Read(iv)
+	if err != nil {
+		return fmt.Errorf("failed to generate IV: %w", err)
+	}
+
+	block, _ := aes.NewCipher(aesKey)
+	stream := cipher.NewCTR(block, iv)
+
+	ciphertext := make([]byte, len(buff.Bytes()))
+	stream.XORKeyStream(ciphertext, buff.Bytes())
+
+	var keyToEncrypt []byte
+	keyToEncrypt = append(keyToEncrypt, aesKey...)
+	keyToEncrypt = append(keyToEncrypt, iv...)
+	encryptedKey, err := rsa.EncryptOAEP(
+		sha256.New(),
+		rand.Reader,
+		s.publicKey,
+		keyToEncrypt,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("RSA encryption failed: %w", err)
+	}
+
+	var finalPayload []byte
+	finalPayload = append(finalPayload, encryptedKey...)
+	finalPayload = append(finalPayload, ciphertext...)
+
 	url := s.endpoint
 
 	log.Printf("new request to url=%s, method=%s", url, http.MethodPost)
@@ -83,17 +147,17 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 		log.Printf("    data: %s", &m)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, &buff)
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(finalPayload))
 	if err != nil {
 		return fmt.Errorf("sender.go func SendQueryUpdateMetrics(): error create request - %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("Content-Encoding", "gzip")
 
 	if s.hashKey != nil {
 		h := hmac.New(sha256.New, []byte(*s.hashKey))
-		h.Write(buff.Bytes())
+		h.Write(finalPayload)
 		sum := hex.EncodeToString(h.Sum(nil))
 		req.Header.Set("HashSHA256", sum)
 	}
