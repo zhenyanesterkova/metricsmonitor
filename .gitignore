@@ -27,4 +27,4 @@ vendor/
 .vscode
 
 storage.txt
-/build/crypto
+*.crt
