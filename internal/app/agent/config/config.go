@@ -9,7 +9,7 @@ const (
 	defaultPollInt       = 2
 	defaultReportInt     = 10
 	defaultRateLimit     = 3
-	defaultCryptoKeyPath = "../server/example-public.crt"
+	defaultCryptoKeyPath = "example-public.crt"
 )
 
 type Config struct {
