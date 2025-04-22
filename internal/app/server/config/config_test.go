@@ -321,3 +321,44 @@ func TestIsFlagPassed(t *testing.T) {
 		assert.Equal(t, false, res)
 	})
 }
+
+func Test_FileConfig(t *testing.T) {
+	hashkey := "fromjson"
+	wantCfg := &Config{
+		SConfig: ServerConfig{
+			Address:              "fromjson",
+			HashKey:              &hashkey,
+			CryptoPrivateKeyPath: "fromjson",
+			CryptoPublicKeyPath:  "fromjson",
+			ConfigsFileName:      "fromjson",
+			NeedGenKeys:          true,
+		},
+		LConfig: LoggerConfig{
+			Level: "fromjson",
+		},
+		DBConfig: DataBaseConfig{
+			FileStorageConfig: &FileStorageConfig{
+				FileStoragePath: "fromjson",
+				StoreInterval:   500,
+				Restore:         true,
+			},
+			PostgresConfig: &PostgresConfig{
+				DSN: "fromjson",
+			},
+		},
+		RetryConfig: RetryConfig{
+			MinDelay:   time.Second,
+			MaxDelay:   5 * time.Second,
+			MaxAttempt: 3,
+		},
+	}
+
+	err := os.Setenv("CONFIG", "test_config.json")
+	require.NoError(t, err)
+
+	cfg := New()
+	err = cfg.fileBuild()
+	require.NoError(t, err)
+
+	require.Equal(t, wantCfg, cfg)
+}
