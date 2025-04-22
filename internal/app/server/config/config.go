@@ -6,10 +6,10 @@ import (
 )
 
 type Config struct {
-	DBConfig    DataBaseConfig
-	LConfig     LoggerConfig
-	SConfig     ServerConfig
-	RetryConfig RetryConfig
+	DBConfig    DataBaseConfig `json:"db_config"`
+	LConfig     LoggerConfig   `json:"log_config"`
+	SConfig     ServerConfig   `json:"server_config"`
+	RetryConfig RetryConfig    `json:"retry_config"`
 }
 
 func New() *Config {

@@ -171,6 +171,9 @@ func TestConfig(t *testing.T) {
 			Level: "info",
 		},
 		DBConfig: DataBaseConfig{
+			PostgresConfig: &PostgresConfig{
+				DSN: "",
+			},
 			FileStorageConfig: &FileStorageConfig{
 				FileStoragePath: "storage.txt",
 				StoreInterval:   300 * time.Second,

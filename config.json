@@ -1,8 +1,20 @@
 {
-    "address": "localhost:8080",
-    "restore": true,
-    "store_interval": "1s",
-    "store_file": "/path/to/file.db",
-    "database_dsn": "",
-    "crypto_key": "/path/to/key.pem"
+    "db_config": {
+        "postgres_storage": {
+            "database_dsn": ""
+        },
+        "file_storage": {
+            "restore": true,
+            "store_file": "storage.txt"
+        }
+    },
+    "server_config": {
+        "address": "localhost:8888",
+        "crypto_key": "example-private.crt",
+        "crypto_pub_key": "example-public.crt",
+        "need-gen": false
+    },
+    "log_config": {
+        "log_level": "info"
+    }
 }

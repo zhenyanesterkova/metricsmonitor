@@ -6,19 +6,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 )
 
 func Test_GenerateKeyPair(t *testing.T) {
-	cfg := config.New()
-	err := cfg.Build()
-	require.NoError(t, err)
+	privateKeyDir := "example-private.crt"
+	publicKeyDir := "example-public.crt"
 
-	privateKeyDir := cfg.SConfig.CryptoPrivateKeyPath
-	publicKeyDir := cfg.SConfig.CryptoPublicKeyPath
-
-	err = GenerateKeyPair(privateKeyDir, publicKeyDir)
+	err := GenerateKeyPair(privateKeyDir, publicKeyDir)
 	require.NoError(t, err)
 
 	t.Run("access rights and file existence", func(t *testing.T) {

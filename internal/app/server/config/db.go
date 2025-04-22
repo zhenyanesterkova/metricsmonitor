@@ -9,8 +9,8 @@ const (
 )
 
 type DataBaseConfig struct {
-	PostgresConfig    *PostgresConfig
-	FileStorageConfig *FileStorageConfig
+	PostgresConfig    *PostgresConfig    `json:"postgres_storage"`
+	FileStorageConfig *FileStorageConfig `json:"file_storage"`
 }
 
 type PostgresConfig struct {
