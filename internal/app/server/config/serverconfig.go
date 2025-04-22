@@ -14,5 +14,4 @@ type ServerConfig struct {
 	CryptoPrivateKeyPath string  `json:"crypto_key"`
 	CryptoPublicKeyPath  string  `json:"crypto_pub_key"`
 	ConfigsFileName      string  `json:"config_file_name"`
-	NeedGenKeys          bool    `json:"need-gen"`
 }

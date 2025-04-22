@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *Config) setEnvServerConfig() error {
+func (c *Config) setEnvServerConfig() {
 	if envEndpoint, ok := os.LookupEnv("ADDRESS"); ok {
 		c.SConfig.Address = envEndpoint
 	}
@@ -22,16 +22,6 @@ func (c *Config) setEnvServerConfig() error {
 	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_PUB_KEY"); ok {
 		c.SConfig.CryptoPublicKeyPath = envCryptoKeyPath
 	}
-
-	if envNeedGenKeys, ok := os.LookupEnv("NEED_GEN_KEYS"); ok {
-		need, err := strconv.ParseBool(envNeedGenKeys)
-		if err != nil {
-			return fmt.Errorf("can not parse bool param(NEED_GEN_KEYS): %w", err)
-		}
-		c.SConfig.NeedGenKeys = need
-	}
-
-	return nil
 }
 
 func (c *Config) setEnvLoggerConfig() {
@@ -72,12 +62,10 @@ func (c *Config) setDBConfig() error {
 }
 
 func (c *Config) envBuild() error {
-	err := c.setEnvServerConfig()
-	if err != nil {
-		return fmt.Errorf("build env server config error: %w", err)
-	}
+	c.setEnvServerConfig()
+
 	c.setEnvLoggerConfig()
-	err = c.setDBConfig()
+	err := c.setDBConfig()
 	if err != nil {
 		return fmt.Errorf("build env logger config error: %w", err)
 	}

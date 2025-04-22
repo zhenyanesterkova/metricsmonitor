@@ -18,7 +18,6 @@ func New() *Config {
 			Address:              DefaultServerAddress,
 			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
 			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
-			NeedGenKeys:          DefualtNeedGenKeys,
 			ConfigsFileName:      DefaultConfigsFileName,
 		},
 		LConfig: LoggerConfig{

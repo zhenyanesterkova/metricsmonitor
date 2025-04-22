@@ -108,18 +108,6 @@ func SetTestFlags(c *Config) (*flags, error) {
 		return nil, fmt.Errorf("failed set flag -k: %w", err)
 	}
 
-	needGenKeys := false
-	flag.BoolVar(
-		&needGenKeys,
-		"need-gen",
-		needGenKeys,
-		"need to generate a private and public key for asymmetric encryption",
-	)
-	err = flag.CommandLine.Set("need-gen", "false")
-	if err != nil {
-		return nil, fmt.Errorf("failed set flag -need-gen: %w", err)
-	}
-
 	cryptoKey := ""
 	flag.StringVar(
 		&cryptoKey,
@@ -155,7 +143,6 @@ func SetTestFlags(c *Config) (*flags, error) {
 		restore:         restore,
 		dsn:             dsn,
 		hashKey:         &hashKey,
-		needGenKeys:     needGenKeys,
 	}, nil
 }
 
@@ -240,8 +227,7 @@ func TestConfig(t *testing.T) {
 		err = os.Setenv("KEY", key)
 		require.NoError(t, err)
 
-		err = cfg.setEnvServerConfig()
-		require.NoError(t, err)
+		cfg.setEnvServerConfig()
 		require.Equal(
 			t,
 			ServerConfig{
@@ -331,7 +317,6 @@ func Test_FileConfig(t *testing.T) {
 			CryptoPrivateKeyPath: "fromjson",
 			CryptoPublicKeyPath:  "fromjson",
 			ConfigsFileName:      "fromjson",
-			NeedGenKeys:          true,
 		},
 		LConfig: LoggerConfig{
 			Level: "fromjson",

@@ -19,7 +19,6 @@ type flags struct {
 	dsn             string
 	tempDur         int
 	restore         bool
-	needGenKeys     bool
 }
 
 func (c *Config) parseFlagsVariables() *flags {
@@ -71,14 +70,6 @@ func (c *Config) parseFlagsVariables() *flags {
 		"need restore",
 	)
 
-	needGenKeys := false
-	flag.BoolVar(
-		&needGenKeys,
-		"need-gen",
-		needGenKeys,
-		"need to generate a private and public key for asymmetric encryption",
-	)
-
 	dsn := ""
 	flag.StringVar(
 		&dsn,
@@ -124,7 +115,6 @@ func (c *Config) parseFlagsVariables() *flags {
 		restore:         restore,
 		dsn:             dsn,
 		hashKey:         &hashKey,
-		needGenKeys:     needGenKeys,
 	}
 	return res
 }
@@ -159,10 +149,6 @@ func (c *Config) setFlagsVariables(f *flags) error {
 
 	if isFlagPassed("r") {
 		c.DBConfig.FileStorageConfig.Restore = f.restore
-	}
-
-	if isFlagPassed("need-gen") {
-		c.SConfig.NeedGenKeys = f.needGenKeys
 	}
 
 	if isFlagPassed("d") {
