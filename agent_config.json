@@ -1,6 +1,6 @@
 {
     "address": "localhost:8088",
-    "report_interval": 1,
-    "poll_interval": 1,
+    "report_interval": 6000000000,
+    "poll_interval": 3000000000,
     "crypto_key": "example-public.crt"
 }
