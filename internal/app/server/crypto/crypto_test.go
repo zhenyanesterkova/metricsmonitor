@@ -11,13 +11,8 @@ import (
 )
 
 func Test_GenerateKeyPair(t *testing.T) {
-	err := os.Setenv("CRYPTO_KEY", "./test-private.crt")
-	require.NoError(t, err)
-	err = os.Setenv("CRYPTO_PUB_KEY", "./test-public.crt")
-	require.NoError(t, err)
-
 	cfg := config.New()
-	err = cfg.Build()
+	err := cfg.Build()
 	require.NoError(t, err)
 
 	privateKeyDir := cfg.SConfig.CryptoPrivateKeyPath
