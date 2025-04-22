@@ -5,20 +5,22 @@ import (
 )
 
 const (
-	defaultAddress       = "localhost:8080"
-	defaultPollInt       = 2
-	defaultReportInt     = 10
-	defaultRateLimit     = 3
-	defaultCryptoKeyPath = "example-public.crt"
+	defaultAddress        = "localhost:8080"
+	defaultPollInt        = 2
+	defaultReportInt      = 10
+	defaultRateLimit      = 3
+	defaultCryptoKeyPath  = "example-public.crt"
+	defaultConfigFileName = "agent_config.json"
 )
 
 type Config struct {
-	HashKey        *string
-	Address        string
-	CryptoKeyPath  string
-	PollInterval   time.Duration
-	ReportInterval time.Duration
-	RateLimit      int
+	HashKey        *string       `json:"hash_key"`
+	Address        string        `json:"address"`
+	CryptoKeyPath  string        `json:"crypto_key"`
+	ConfigFileName string        `json:"config"`
+	PollInterval   time.Duration `json:"poll_interval"`
+	ReportInterval time.Duration `json:"report_interval"`
+	RateLimit      int           `json:"rate_limit"`
 }
 
 func New() *Config {
@@ -28,11 +30,22 @@ func New() *Config {
 		ReportInterval: defaultReportInt * time.Second,
 		RateLimit:      defaultRateLimit,
 		CryptoKeyPath:  defaultCryptoKeyPath,
+		ConfigFileName: defaultConfigFileName,
 	}
 }
 
 func (c *Config) Build() error {
-	err := c.buildFlags()
+	flags := c.parseFlagsVariables()
+
+	if flags.configFileName != "" {
+		c.ConfigFileName = flags.configFileName
+	}
+	err := c.fileBuild()
+	if err != nil {
+		return err
+	}
+
+	err = c.buildFlags(flags)
 	if err != nil {
 		return err
 	}

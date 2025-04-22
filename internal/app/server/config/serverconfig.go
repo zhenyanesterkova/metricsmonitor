@@ -5,7 +5,7 @@ const (
 	DefaultCryptoPrivateKeyPath = "example-private.crt"
 	DefaultCryptoPublicKeyPath  = "example-public.crt"
 	DefualtNeedGenKeys          = false
-	DefaultConfigsFileName      = "config.json"
+	DefaultConfigsFileName      = "server_config.json"
 )
 
 type ServerConfig struct {

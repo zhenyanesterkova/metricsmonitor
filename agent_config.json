@@ -1,0 +1,6 @@
+{
+    "address": "localhost:8088",
+    "report_interval": 1,
+    "poll_interval": 1,
+    "crypto_key": "example-public.crt"
+}

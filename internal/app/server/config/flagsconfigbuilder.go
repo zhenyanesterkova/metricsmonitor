@@ -99,7 +99,7 @@ func (c *Config) parseFlagsVariables() *flags {
 		&cryptoPublicKey,
 		"crypto-pub-key",
 		cryptoPublicKey,
-		"path to the file with the private key",
+		"path to the file with the public key",
 	)
 
 	flag.Parse()
