@@ -91,7 +91,7 @@ func run() error {
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	loggerInst.LogrusLog.Infof("Build version: %s\n", buildVersion)
 	loggerInst.LogrusLog.Infof("Build date: %s\n", buildDate)

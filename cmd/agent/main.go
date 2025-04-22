@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("an error occurred while create the sender: %v", err)
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	defer stop()
 
 	errCh := make(chan error)
