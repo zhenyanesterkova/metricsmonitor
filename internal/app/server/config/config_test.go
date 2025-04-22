@@ -106,7 +106,9 @@ func SetTestFlags(c *Config) (flags, error) {
 func TestConfig(t *testing.T) {
 	defaultCfg := &Config{
 		SConfig: ServerConfig{
-			Address: "localhost:8080",
+			Address:              "localhost:8080",
+			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
+			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
 		},
 		LConfig: LoggerConfig{
 			Level: "info",
@@ -138,8 +140,10 @@ func TestConfig(t *testing.T) {
 		hashKey := "testfromflag"
 		wantCfg := &Config{
 			SConfig: ServerConfig{
-				Address: "www.testfromflag",
-				HashKey: &hashKey,
+				Address:              "www.testfromflag",
+				HashKey:              &hashKey,
+				CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
+				CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
 			},
 			LConfig: LoggerConfig{
 				Level: "levelfromflag",
@@ -175,12 +179,15 @@ func TestConfig(t *testing.T) {
 		err = os.Setenv("KEY", key)
 		require.NoError(t, err)
 
-		cfg.setEnvServerConfig()
+		err = cfg.setEnvServerConfig()
+		require.NoError(t, err)
 		require.Equal(
 			t,
 			ServerConfig{
-				Address: "www.fromenv.ru",
-				HashKey: &key,
+				Address:              "www.fromenv.ru",
+				HashKey:              &key,
+				CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
+				CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
 			},
 			cfg.SConfig,
 		)

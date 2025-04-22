@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
 )
 
@@ -25,20 +27,17 @@ func TestSender_SendQueryUpdateMetrics(t *testing.T) {
 
 	key := "testong"
 	t.Run("Test #1", func(t *testing.T) {
-		s := &Sender{
-			report: ReportData{
-				metricsBuf: metricBuff,
-			},
-			client:   &http.Client{},
-			hashKey:  &key,
-			endpoint: srv.URL,
-			requestAttemptIntervals: []string{
-				"1s",
-				"3s",
-				"5s",
-			},
-		}
-		err := s.SendQueryUpdateMetrics()
+		cfg := config.New()
+		s, err := New(
+			srv.URL,
+			cfg.ReportInterval,
+			metricBuff,
+			&key,
+			cfg.RateLimit,
+			"./testdata/crypto/public.crt",
+		)
+		require.NoError(t, err)
+		err = s.SendQueryUpdateMetrics()
 		assert.NoError(t, err)
 	})
 }

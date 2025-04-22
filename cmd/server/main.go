@@ -16,6 +16,7 @@ import (
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/backoff"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/crypto"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/handler"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/retrystorage"
@@ -76,10 +77,27 @@ func run() error {
 		}
 	}()
 
+	if cfg.SConfig.NeedGenKeys {
+		err = crypto.GenerateKeyPair(cfg.SConfig.CryptoPrivateKeyPath, cfg.SConfig.CryptoPublicKeyPath)
+		if err != nil {
+			loggerInst.LogrusLog.Errorf("can not generate key pair: %v", err)
+			return fmt.Errorf("failed generate key pair: %w", err)
+		}
+	}
+
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst, cfg.SConfig.HashKey)
-	repoHandler.InitChiRouter(router)
+	repoHandler := handler.NewRepositorieHandler(
+		retryStore,
+		loggerInst,
+		cfg.SConfig.HashKey,
+		cfg.SConfig.CryptoPrivateKeyPath,
+	)
+	err = repoHandler.InitChiRouter(router)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("can not init router: %v", err)
+		return fmt.Errorf("failed init router: %w", err)
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)

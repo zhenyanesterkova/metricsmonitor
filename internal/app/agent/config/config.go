@@ -5,15 +5,17 @@ import (
 )
 
 const (
-	defaultAddress   = "localhost:8080"
-	defaultPollInt   = 2
-	defaultReportInt = 10
-	defaultRateLimit = 3
+	defaultAddress       = "localhost:8080"
+	defaultPollInt       = 2
+	defaultReportInt     = 10
+	defaultRateLimit     = 3
+	defaultCryptoKeyPath = "example-public.crt"
 )
 
 type Config struct {
 	HashKey        *string
 	Address        string
+	CryptoKeyPath  string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
 	RateLimit      int
@@ -25,6 +27,7 @@ func New() *Config {
 		PollInterval:   defaultPollInt * time.Second,
 		ReportInterval: defaultReportInt * time.Second,
 		RateLimit:      defaultRateLimit,
+		CryptoKeyPath:  defaultCryptoKeyPath,
 	}
 }
 

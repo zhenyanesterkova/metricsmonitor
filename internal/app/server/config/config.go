@@ -7,15 +7,18 @@ import (
 
 type Config struct {
 	DBConfig    DataBaseConfig
-	SConfig     ServerConfig
 	LConfig     LoggerConfig
+	SConfig     ServerConfig
 	RetryConfig RetryConfig
 }
 
 func New() *Config {
 	return &Config{
 		SConfig: ServerConfig{
-			Address: DefaultServerAddress,
+			Address:              DefaultServerAddress,
+			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
+			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
+			NeedGenKeys:          DefualtNeedGenKeys,
 		},
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,
