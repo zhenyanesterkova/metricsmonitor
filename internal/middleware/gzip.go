@@ -11,7 +11,8 @@ import (
 
 func isCompression(cType string) bool {
 	if cType == "application/json" ||
-		cType == "text/html" {
+		cType == "text/html" ||
+		cType == "application/octet-stream" {
 		return true
 	}
 

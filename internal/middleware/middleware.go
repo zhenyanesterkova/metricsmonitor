@@ -1,19 +1,29 @@
 package middleware
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 )
 
 type MiddlewareStruct struct {
-	Logger   logger.LogrusLogger
-	hashKey  *string
-	respData *responseDataWriter
+	Logger     logger.LogrusLogger
+	hashKey    *string
+	respData   *responseDataWriter
+	privateKey *rsa.PrivateKey
 }
 
-func NewMiddlewareStruct(log logger.LogrusLogger, key *string) MiddlewareStruct {
+func NewMiddlewareStruct(
+	log logger.LogrusLogger,
+	key *string,
+	pathToPrivateKey string,
+) (MiddlewareStruct, error) {
 	responseData := &responseData{
 		status:  0,
 		size:    0,
@@ -24,11 +34,23 @@ func NewMiddlewareStruct(log logger.LogrusLogger, key *string) MiddlewareStruct 
 		responseData: responseData,
 	}
 
-	return MiddlewareStruct{
-		Logger:   log,
-		hashKey:  key,
-		respData: &lw,
+	privateKeyPEM, err := os.ReadFile(pathToPrivateKey)
+	if err != nil {
+		return MiddlewareStruct{}, fmt.Errorf("failed read private key from file: %w", err)
 	}
+
+	privateKeyBlock, _ := pem.Decode(privateKeyPEM)
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		return MiddlewareStruct{}, fmt.Errorf("failed parses a private key in PKIX, ASN.1 DER form: %w", err)
+	}
+
+	return MiddlewareStruct{
+		Logger:     log,
+		hashKey:    key,
+		respData:   &lw,
+		privateKey: privateKey,
+	}, nil
 }
 
 func (lm MiddlewareStruct) ResetRespDataStruct(next http.Handler) http.Handler {

@@ -9,7 +9,7 @@ const (
 )
 
 type RetryConfig struct {
-	MinDelay   time.Duration
-	MaxDelay   time.Duration
-	MaxAttempt int
+	MinDelay   time.Duration `json:"min_delay"`
+	MaxDelay   time.Duration `json:"max_delay"`
+	MaxAttempt int           `json:"max_attempt"`
 }

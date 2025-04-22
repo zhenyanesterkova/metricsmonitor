@@ -86,8 +86,9 @@ func TestRouter(t *testing.T) {
 
 	router := chi.NewRouter()
 
-	repoHandler := NewRepositorieHandler(memStorage, loggerInst, nil)
-	repoHandler.InitChiRouter(router)
+	repoHandler := NewRepositorieHandler(memStorage, loggerInst, nil, "./testdata/crypto/private.crt")
+	err = repoHandler.InitChiRouter(router)
+	require.NoError(t, err)
 
 	ts := httptest.NewServer(router)
 

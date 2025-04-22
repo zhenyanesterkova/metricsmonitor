@@ -21,7 +21,7 @@ type Store interface {
 }
 
 func NewStore(conf config.DataBaseConfig, log logger.LogrusLogger) (Store, error) {
-	if conf.PostgresConfig != nil {
+	if conf.PostgresConfig != nil && conf.PostgresConfig.DSN != "" {
 		log.LogrusLog.Debugln("create postgres storage")
 		store, err := postgres.New(conf.PostgresConfig.DSN, log)
 		if err != nil {
