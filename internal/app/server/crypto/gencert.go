@@ -48,13 +48,31 @@ func GenerateKeyPair(pathToPrivate, pathToPublic string) error {
 		Bytes: publicKeyBytes,
 	})
 
-	err = os.WriteFile(pathToPrivate, privateKeyPEM, filePermission)
+	filePrivate, err := os.OpenFile(pathToPrivate, os.O_CREATE, filePermission)
 	if err != nil {
-		return fmt.Errorf("failed write private key in file: %w", err)
+		return fmt.Errorf("failed open file for write private key: %w", err)
 	}
-	err = os.WriteFile(pathToPublic, publicKeyPEM, filePermission)
+	filePublic, err := os.OpenFile(pathToPublic, os.O_CREATE, filePermission)
 	if err != nil {
-		return fmt.Errorf("failed write public key: %w", err)
+		return fmt.Errorf("failed open file for write public key: %w", err)
+	}
+
+	_, err = filePrivate.Write(privateKeyPEM)
+	if err != nil {
+		return fmt.Errorf("failed write private key to file: %w", err)
+	}
+	_, err = filePublic.Write(publicKeyPEM)
+	if err != nil {
+		return fmt.Errorf("failed write public key to file: %w", err)
+	}
+
+	err = filePrivate.Close()
+	if err != nil {
+		return fmt.Errorf("failed close private key file: %w", err)
+	}
+	err = filePublic.Close()
+	if err != nil {
+		return fmt.Errorf("failed close public key file: %w", err)
 	}
 
 	return nil
