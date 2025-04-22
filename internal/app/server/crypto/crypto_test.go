@@ -9,6 +9,11 @@ import (
 )
 
 func Test_GenerateKeyPair(t *testing.T) {
+	t.Run("empty path", func(t *testing.T) {
+		err := GenerateKeyPair("", "")
+		require.Error(t, err)
+	})
+
 	privateKeyDir := "example-private.crt"
 	publicKeyDir := "example-public.crt"
 
@@ -38,16 +43,6 @@ func Test_GenerateKeyPair(t *testing.T) {
 
 		block, _ = pem.Decode(publicData)
 		require.Equal(t, "RSA PUBLIC KEY", block.Type)
-	})
-
-	err = os.Remove(privateKeyDir)
-	require.NoError(t, err)
-	err = os.Remove(publicKeyDir)
-	require.NoError(t, err)
-
-	t.Run("empty path", func(t *testing.T) {
-		err := GenerateKeyPair("", "")
-		require.Error(t, err)
 	})
 }
 
