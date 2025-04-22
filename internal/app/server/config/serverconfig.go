@@ -2,8 +2,8 @@ package config
 
 const (
 	DefaultServerAddress        = "localhost:8080"
-	DefaultCryptoPrivateKeyPath = "../../build/crypto/private.crt"
-	DefaultCryptoPublicKeyPath  = "../../build/crypto/public.crt"
+	DefaultCryptoPrivateKeyPath = "../../build/private.crt"
+	DefaultCryptoPublicKeyPath  = "../../build/public.crt"
 )
 
 type ServerConfig struct {

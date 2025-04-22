@@ -14,11 +14,11 @@ const (
 )
 
 func GenerateKeyPair(pathToPrivate, pathToPublic string) error {
-	existsPrivate, err := checkKeyFileExists(pathToPrivate)
+	existsPrivate, err := checkExists(pathToPrivate)
 	if err != nil {
 		return fmt.Errorf("failed check exists file with private key: %w", err)
 	}
-	existsPublic, err := checkKeyFileExists(pathToPublic)
+	existsPublic, err := checkExists(pathToPublic)
 	if err != nil {
 		return fmt.Errorf("failed check exists file with public key: %w", err)
 	}
@@ -60,7 +60,7 @@ func GenerateKeyPair(pathToPrivate, pathToPublic string) error {
 	return nil
 }
 
-func checkKeyFileExists(path string) (bool, error) {
+func checkExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {

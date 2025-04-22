@@ -3,42 +3,45 @@ package crypto
 import (
 	"encoding/pem"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 )
 
 func Test_GenerateKeyPair(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test-keys")
+	err := os.Setenv("CRYPTO_KEY", "./test-private.crt")
 	require.NoError(t, err)
-	defer func() {
-		err := os.RemoveAll(tempDir)
-		require.NoError(t, err)
-	}()
+	err = os.Setenv("CRYPTO_PUB_KEY", "./test-public.crt")
+	require.NoError(t, err)
 
-	privatePath := filepath.Join(tempDir, "private.crt")
-	pubPath := filepath.Join(tempDir, "pub.crt")
+	cfg := config.New()
+	err = cfg.Build()
+	require.NoError(t, err)
 
-	err = GenerateKeyPair(privatePath, pubPath)
+	privateKeyDir := cfg.SConfig.CryptoPrivateKeyPath
+	publicKeyDir := cfg.SConfig.CryptoPublicKeyPath
+
+	err = GenerateKeyPair(privateKeyDir, publicKeyDir)
 	require.NoError(t, err)
 
 	t.Run("access rights and file existence", func(t *testing.T) {
-		info, err := os.Stat(privatePath)
+		info, err := os.Stat(privateKeyDir)
 		require.NoError(t, err)
 		//nolint:all //checking file access rights
 		require.Equal(t, true, (info.Mode()&0600) == filePermission)
 
-		info, err = os.Stat(pubPath)
+		info, err = os.Stat(publicKeyDir)
 		require.NoError(t, err)
 		//nolint:all //checking file access rights
 		require.Equal(t, true, (info.Mode()&0600) == filePermission)
 	})
 
 	t.Run("file contents", func(t *testing.T) {
-		privateData, err := os.ReadFile(privatePath)
+		privateData, err := os.ReadFile(privateKeyDir)
 		require.NoError(t, err)
-		publicData, err := os.ReadFile(pubPath)
+		publicData, err := os.ReadFile(publicKeyDir)
 		require.NoError(t, err)
 
 		block, _ := pem.Decode(privateData)
@@ -48,6 +51,11 @@ func Test_GenerateKeyPair(t *testing.T) {
 		require.Equal(t, "RSA PUBLIC KEY", block.Type)
 	})
 
+	err = os.Remove(privateKeyDir)
+	require.NoError(t, err)
+	err = os.Remove(publicKeyDir)
+	require.NoError(t, err)
+
 	t.Run("empty path", func(t *testing.T) {
 		err := GenerateKeyPair("", "")
 		require.Error(t, err)
@@ -55,7 +63,7 @@ func Test_GenerateKeyPair(t *testing.T) {
 }
 
 func Test_checkKeyFileExists(t *testing.T) {
-	exists, err := checkKeyFileExists("./notexists")
+	exists, err := checkExists("./notexists")
 	require.NoError(t, err)
 	require.Equal(t, false, exists)
 
@@ -66,7 +74,7 @@ func Test_checkKeyFileExists(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	exists, err = checkKeyFileExists(tempDir)
+	exists, err = checkExists(tempDir)
 	require.NoError(t, err)
 	require.Equal(t, true, exists)
 }
