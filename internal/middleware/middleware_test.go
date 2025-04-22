@@ -75,7 +75,8 @@ func TestMiddleware(t *testing.T) {
 	require.NoError(t, err)
 
 	key := hashKey
-	mdlWare := NewMiddlewareStruct(loggerInst, &key)
+	mdlWare, err := NewMiddlewareStruct(loggerInst, &key, "./testdata/crypto/private.crt")
+	require.NoError(t, err)
 
 	router := chi.NewRouter()
 

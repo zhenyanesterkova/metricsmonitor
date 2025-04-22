@@ -29,7 +29,10 @@ func main() {
 	stats := statistic.New(metrics, cfg.PollInterval)
 
 	address := fmt.Sprintf("http://%s/updates/", cfg.Address)
-	senderStat := sender.New(address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit)
+	senderStat, err := sender.New(address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit, cfg.CryptoKeyPath)
+	if err != nil {
+		log.Fatalf("an error occurred while create the sender: %v", err)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()

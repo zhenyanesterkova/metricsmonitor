@@ -5,5 +5,5 @@ const (
 )
 
 type LoggerConfig struct {
-	Level string
+	Level string `json:"log_level"`
 }

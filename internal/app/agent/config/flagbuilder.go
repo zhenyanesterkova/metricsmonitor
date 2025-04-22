@@ -8,11 +8,38 @@ import (
 	"time"
 )
 
-func (c *Config) setFlags() error {
-	flag.StringVar(&c.Address, "a", c.Address, "address and port to run server")
+type flags struct {
+	hashKey        *string
+	address        string
+	cryptoKeyPath  string
+	configFileName string
+	pollInterval   int
+	reportInterval int
+	rateLimit      int
+}
 
-	var key string
+func (c *Config) parseFlagsVariables() *flags {
+	adress := ""
+	flag.StringVar(
+		&adress,
+		"a",
+		adress,
+		"address and port to run server",
+	)
+
+	cryptoKey := ""
+	flag.StringVar(
+		&cryptoKey,
+		"crypto-key",
+		cryptoKey,
+		"path to the file with the public key",
+	)
+
+	key := ""
 	flag.StringVar(&key, "k", "", "hash key")
+
+	configFileName := ""
+	flag.StringVar(&configFileName, "config", configFileName, "hash key")
 
 	var durPoll int
 	flag.IntVar(&durPoll, "p", defaultPollInt, "the frequency of polling metrics from the runtime package")
@@ -25,12 +52,30 @@ func (c *Config) setFlags() error {
 
 	flag.Parse()
 
+	res := &flags{
+		address:        adress,
+		cryptoKeyPath:  cryptoKey,
+		hashKey:        &key,
+		pollInterval:   durPoll,
+		reportInterval: durRep,
+		rateLimit:      rateLimit,
+		configFileName: configFileName,
+	}
+
+	return res
+}
+
+func (c *Config) setFlagsVariables(f *flags) error {
+	if isFlagPassed("a") {
+		c.Address = f.address
+	}
+
 	if isFlagPassed("k") {
-		c.HashKey = &key
+		c.HashKey = f.hashKey
 	}
 
 	if isFlagPassed("p") {
-		dur, err := time.ParseDuration(strconv.Itoa(durPoll) + "s")
+		dur, err := time.ParseDuration(strconv.Itoa(f.pollInterval) + "s")
 		if err != nil {
 			return errors.New("can not parse poll_interval as duration " + err.Error())
 		}
@@ -38,7 +83,7 @@ func (c *Config) setFlags() error {
 	}
 
 	if isFlagPassed("r") {
-		dur, err := time.ParseDuration(strconv.Itoa(durRep) + "s")
+		dur, err := time.ParseDuration(strconv.Itoa(f.reportInterval) + "s")
 		if err != nil {
 			return errors.New("can not parse report_interval as duration " + err.Error())
 		}
@@ -46,16 +91,20 @@ func (c *Config) setFlags() error {
 	}
 
 	if isFlagPassed("l") {
-		c.RateLimit = rateLimit
+		c.RateLimit = f.rateLimit
+	}
+
+	if isFlagPassed("crypto-key") {
+		c.CryptoKeyPath = f.cryptoKeyPath
 	}
 
 	return nil
 }
 
-func (c *Config) buildFlags() error {
-	err := c.setFlags()
+func (c *Config) buildFlags(f *flags) error {
+	err := c.setFlagsVariables(f)
 	if err != nil {
-		return fmt.Errorf("config func buildFlags(): %w", err)
+		return fmt.Errorf("failed build flags config: %w", err)
 	}
 
 	return nil

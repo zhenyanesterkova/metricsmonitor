@@ -6,16 +6,19 @@ import (
 )
 
 type Config struct {
-	DBConfig    DataBaseConfig
-	SConfig     ServerConfig
-	LConfig     LoggerConfig
-	RetryConfig RetryConfig
+	DBConfig    DataBaseConfig `json:"db_config"`
+	LConfig     LoggerConfig   `json:"log_config"`
+	SConfig     ServerConfig   `json:"server_config"`
+	RetryConfig RetryConfig    `json:"retry_config"`
 }
 
 func New() *Config {
 	return &Config{
 		SConfig: ServerConfig{
-			Address: DefaultServerAddress,
+			Address:              DefaultServerAddress,
+			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
+			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
+			ConfigsFileName:      DefaultConfigsFileName,
 		},
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,
@@ -26,6 +29,7 @@ func New() *Config {
 				StoreInterval:   DefaultStoreInterval * time.Second,
 				Restore:         DefaultRestore,
 			},
+			PostgresConfig: &PostgresConfig{},
 		},
 		RetryConfig: RetryConfig{
 			MinDelay:   DefaultMinRetryDelay,
@@ -36,7 +40,17 @@ func New() *Config {
 }
 
 func (c *Config) Build() error {
-	err := c.flagBuild()
+	flagsVar := c.parseFlagsVariables()
+
+	if flagsVar.config != "" {
+		c.SConfig.ConfigsFileName = flagsVar.config
+	}
+	err := c.fileBuild()
+	if err != nil {
+		return fmt.Errorf("error build config from file: %w", err)
+	}
+
+	err = c.flagBuild(flagsVar)
 	if err != nil {
 		return fmt.Errorf("error build config from flags: %w", err)
 	}

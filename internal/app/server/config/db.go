@@ -9,16 +9,16 @@ const (
 )
 
 type DataBaseConfig struct {
-	PostgresConfig    *PostgresConfig
-	FileStorageConfig *FileStorageConfig
+	PostgresConfig    *PostgresConfig    `json:"postgres_storage"`
+	FileStorageConfig *FileStorageConfig `json:"file_storage"`
 }
 
 type PostgresConfig struct {
-	DSN string
+	DSN string `json:"database_dsn"`
 }
 
 type FileStorageConfig struct {
-	FileStoragePath string
-	StoreInterval   time.Duration
-	Restore         bool
+	FileStoragePath string        `json:"store_file"`
+	StoreInterval   time.Duration `json:"store_interval"`
+	Restore         bool          `json:"restore"`
 }
