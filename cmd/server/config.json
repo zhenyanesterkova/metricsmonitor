@@ -2,10 +2,6 @@
     "db_config": {
         "postgres_storage": {
             "database_dsn": ""
-        },
-        "file_storage": {
-            "restore": true,
-            "store_file": "storage.txt"
         }
     },
     "server_config": {
