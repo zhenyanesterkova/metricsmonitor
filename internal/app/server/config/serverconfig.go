@@ -4,6 +4,7 @@ const (
 	DefaultServerAddress        = "localhost:8080"
 	DefaultCryptoPrivateKeyPath = "example-private.crt"
 	DefaultCryptoPublicKeyPath  = "example-public.crt"
+	DefualtNeedGenKeys          = false
 )
 
 type ServerConfig struct {
@@ -11,4 +12,5 @@ type ServerConfig struct {
 	Address              string
 	CryptoPrivateKeyPath string
 	CryptoPublicKeyPath  string
+	NeedGenKeys          bool
 }

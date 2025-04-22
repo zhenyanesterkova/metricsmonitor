@@ -77,10 +77,12 @@ func run() error {
 		}
 	}()
 
-	err = crypto.GenerateKeyPair(cfg.SConfig.CryptoPrivateKeyPath, cfg.SConfig.CryptoPublicKeyPath)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("can not generate key pair: %v", err)
-		return fmt.Errorf("failed generate key pair: %w", err)
+	if cfg.SConfig.NeedGenKeys {
+		err = crypto.GenerateKeyPair(cfg.SConfig.CryptoPrivateKeyPath, cfg.SConfig.CryptoPublicKeyPath)
+		if err != nil {
+			loggerInst.LogrusLog.Errorf("can not generate key pair: %v", err)
+			return fmt.Errorf("failed generate key pair: %w", err)
+		}
 	}
 
 	router := chi.NewRouter()

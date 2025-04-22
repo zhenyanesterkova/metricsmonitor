@@ -179,7 +179,8 @@ func TestConfig(t *testing.T) {
 		err = os.Setenv("KEY", key)
 		require.NoError(t, err)
 
-		cfg.setEnvServerConfig()
+		err = cfg.setEnvServerConfig()
+		require.NoError(t, err)
 		require.Equal(
 			t,
 			ServerConfig{
