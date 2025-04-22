@@ -11,27 +11,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func SetTestFlags(c *Config) (flags, error) {
+func SetTestFlags(c *Config) (*flags, error) {
+	adress := ""
 	flag.StringVar(
-		&c.SConfig.Address,
+		&adress,
 		"a",
-		c.SConfig.Address,
+		adress,
 		"address and port to run server",
 	)
 	err := flag.CommandLine.Set("a", "www.testfromflag")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -a: %w", err)
+		return nil, fmt.Errorf("failed set flag -a: %w", err)
 	}
 
+	config := ""
 	flag.StringVar(
-		&c.LConfig.Level,
+		&config,
+		"c",
+		config,
+		"config name",
+	)
+	err = flag.CommandLine.Set("c", "config.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed set flag -c: %w", err)
+	}
+
+	logLevel := ""
+	flag.StringVar(
+		&logLevel,
 		"l",
-		c.LConfig.Level,
+		logLevel,
 		"log level",
 	)
 	err = flag.CommandLine.Set("l", "levelfromflag")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -l: %w", err)
+		return nil, fmt.Errorf("failed set flag -l: %w", err)
 	}
 
 	var tempDur int
@@ -43,7 +57,7 @@ func SetTestFlags(c *Config) (flags, error) {
 	)
 	err = flag.CommandLine.Set("i", "500")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -i: %w", err)
+		return nil, fmt.Errorf("failed set flag -i: %w", err)
 	}
 
 	fileStoragePath := ""
@@ -55,7 +69,7 @@ func SetTestFlags(c *Config) (flags, error) {
 	)
 	err = flag.CommandLine.Set("f", "fromflagsstorage.txt")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -f: %w", err)
+		return nil, fmt.Errorf("failed set flag -f: %w", err)
 	}
 
 	restore := false
@@ -67,7 +81,7 @@ func SetTestFlags(c *Config) (flags, error) {
 	)
 	err = flag.CommandLine.Set("r", "true")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -r: %w", err)
+		return nil, fmt.Errorf("failed set flag -r: %w", err)
 	}
 
 	dsn := ""
@@ -79,7 +93,7 @@ func SetTestFlags(c *Config) (flags, error) {
 	)
 	err = flag.CommandLine.Set("d", "postgres://testfromflag")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -d: %w", err)
+		return nil, fmt.Errorf("failed set flag -d: %w", err)
 	}
 
 	hashKey := ""
@@ -91,24 +105,67 @@ func SetTestFlags(c *Config) (flags, error) {
 	)
 	err = flag.CommandLine.Set("k", "testfromflag")
 	if err != nil {
-		return flags{}, fmt.Errorf("failed set flag -k: %w", err)
+		return nil, fmt.Errorf("failed set flag -k: %w", err)
 	}
 
-	return flags{
+	needGenKeys := false
+	flag.BoolVar(
+		&needGenKeys,
+		"need-gen",
+		needGenKeys,
+		"need to generate a private and public key for asymmetric encryption",
+	)
+	err = flag.CommandLine.Set("need-gen", "false")
+	if err != nil {
+		return nil, fmt.Errorf("failed set flag -need-gen: %w", err)
+	}
+
+	cryptoKey := ""
+	flag.StringVar(
+		&cryptoKey,
+		"crypto-key",
+		cryptoKey,
+		"path to the file with the private key",
+	)
+	err = flag.CommandLine.Set("crypto-key", "testfromflag")
+	if err != nil {
+		return nil, fmt.Errorf("failed set flag -crypto-key: %w", err)
+	}
+
+	cryptoPublicKey := ""
+	flag.StringVar(
+		&cryptoPublicKey,
+		"crypto-pub-key",
+		cryptoPublicKey,
+		"path to the file with the private key",
+	)
+	err = flag.CommandLine.Set("crypto-pub-key", "testfromflag")
+	if err != nil {
+		return nil, fmt.Errorf("failed set flag -crypto-pub-key: %w", err)
+	}
+
+	return &flags{
+		adress:          adress,
+		config:          config,
+		logLevel:        logLevel,
+		cryptoKey:       cryptoKey,
+		cryptoPublicKey: cryptoPublicKey,
 		fileStoragePath: fileStoragePath,
 		tempDur:         tempDur,
 		restore:         restore,
 		dsn:             dsn,
 		hashKey:         &hashKey,
+		needGenKeys:     needGenKeys,
 	}, nil
 }
 
 func TestConfig(t *testing.T) {
 	defaultCfg := &Config{
 		SConfig: ServerConfig{
-			Address:              "localhost:8080",
+			Address:              DefaultServerAddress,
 			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
 			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
+			ConfigsFileName:      DefaultConfigsFileName,
 		},
 		LConfig: LoggerConfig{
 			Level: "info",
@@ -142,8 +199,9 @@ func TestConfig(t *testing.T) {
 			SConfig: ServerConfig{
 				Address:              "www.testfromflag",
 				HashKey:              &hashKey,
-				CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
-				CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
+				CryptoPrivateKeyPath: "testfromflag",
+				CryptoPublicKeyPath:  "testfromflag",
+				ConfigsFileName:      "config.json",
 			},
 			LConfig: LoggerConfig{
 				Level: "levelfromflag",
@@ -186,8 +244,9 @@ func TestConfig(t *testing.T) {
 			ServerConfig{
 				Address:              "www.fromenv.ru",
 				HashKey:              &key,
-				CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
-				CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
+				CryptoPrivateKeyPath: "testfromflag",
+				CryptoPublicKeyPath:  "testfromflag",
+				ConfigsFileName:      "config.json",
 			},
 			cfg.SConfig,
 		)

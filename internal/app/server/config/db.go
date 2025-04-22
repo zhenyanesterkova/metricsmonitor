@@ -14,11 +14,11 @@ type DataBaseConfig struct {
 }
 
 type PostgresConfig struct {
-	DSN string
+	DSN string `json:"database_dsn"`
 }
 
 type FileStorageConfig struct {
-	FileStoragePath string
-	StoreInterval   time.Duration
-	Restore         bool
+	FileStoragePath string        `json:"store_file"`
+	StoreInterval   time.Duration `json:"store_interval"`
+	Restore         bool          `json:"restore"`
 }

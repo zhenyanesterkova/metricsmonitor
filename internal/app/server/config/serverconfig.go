@@ -5,12 +5,14 @@ const (
 	DefaultCryptoPrivateKeyPath = "example-private.crt"
 	DefaultCryptoPublicKeyPath  = "example-public.crt"
 	DefualtNeedGenKeys          = false
+	DefaultConfigsFileName      = "config.json"
 )
 
 type ServerConfig struct {
-	HashKey              *string
-	Address              string
-	CryptoPrivateKeyPath string
-	CryptoPublicKeyPath  string
-	NeedGenKeys          bool
+	HashKey              *string `json:"hashkey"`
+	Address              string  `json:"address"`
+	CryptoPrivateKeyPath string  `json:"crypto_key"`
+	CryptoPublicKeyPath  string  `json:"crypto_pub_key"`
+	ConfigsFileName      string
+	NeedGenKeys          bool `json:"need-gen"`
 }

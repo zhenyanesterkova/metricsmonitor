@@ -19,6 +19,7 @@ func New() *Config {
 			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
 			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
 			NeedGenKeys:          DefualtNeedGenKeys,
+			ConfigsFileName:      DefaultConfigsFileName,
 		},
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,
@@ -29,6 +30,7 @@ func New() *Config {
 				StoreInterval:   DefaultStoreInterval * time.Second,
 				Restore:         DefaultRestore,
 			},
+			PostgresConfig: &PostgresConfig{},
 		},
 		RetryConfig: RetryConfig{
 			MinDelay:   DefaultMinRetryDelay,
@@ -39,7 +41,17 @@ func New() *Config {
 }
 
 func (c *Config) Build() error {
-	err := c.flagBuild()
+	flagsVar := c.parseFlagsVariables()
+
+	if flagsVar.config != "" {
+		c.SConfig.ConfigsFileName = flagsVar.config
+	}
+	err := c.fileBuild()
+	if err != nil {
+		return fmt.Errorf("error build config from file: %w", err)
+	}
+
+	err = c.flagBuild(flagsVar)
 	if err != nil {
 		return fmt.Errorf("error build config from flags: %w", err)
 	}
