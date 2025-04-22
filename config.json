@@ -5,7 +5,6 @@
         }
     },
     "server_config": {
-        "address": "localhost:8888",
         "crypto_key": "example-private.crt",
         "crypto_pub_key": "example-public.crt",
         "need-gen": false
