@@ -353,12 +353,23 @@ func Test_FileConfig(t *testing.T) {
 		},
 	}
 
-	err := os.Setenv("CONFIG", "test_config.json")
-	require.NoError(t, err)
+	t.Run("success", func(t *testing.T) {
+		err := os.Setenv("CONFIG", "test_config.json")
+		require.NoError(t, err)
 
-	cfg := New()
-	err = cfg.fileBuild()
-	require.NoError(t, err)
+		cfg := New()
+		err = cfg.fileBuild()
+		require.NoError(t, err)
 
-	require.Equal(t, wantCfg, cfg)
+		require.Equal(t, wantCfg, cfg)
+	})
+
+	t.Run("failed_read_config", func(t *testing.T) {
+		err := os.Setenv("CONFIG", "test_config_no_exists.json")
+		require.NoError(t, err)
+
+		cfg := New()
+		err = cfg.fileBuild()
+		require.Error(t, err)
+	})
 }
