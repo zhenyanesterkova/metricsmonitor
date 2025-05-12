@@ -15,11 +15,6 @@ type flags struct {
 	cryptoKey       string
 	cryptoPublicKey string
 	hashKey         *string
-	adress          string
-	config          string
-	logLevel        string
-	cryptoKey       string
-	cryptoPublicKey string
 	fileStoragePath string
 	dsn             string
 	strCIDR         string
