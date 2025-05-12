@@ -9,6 +9,11 @@ import (
 )
 
 type flags struct {
+	adress          string
+	config          string
+	logLevel        string
+	cryptoKey       string
+	cryptoPublicKey string
 	hashKey         *string
 	adress          string
 	config          string
@@ -139,9 +144,11 @@ func (c *Config) setFlagsVariables(f *flags) error {
 	if isFlagPassed("l") {
 		c.LConfig.Level = f.logLevel
 	}
+
 	if isFlagPassed("t") {
 		c.SConfig.StringCIDR = f.strCIDR
 	}
+
 	if isFlagPassed("crypto-key") {
 		c.SConfig.CryptoPrivateKeyPath = f.cryptoKey
 	}

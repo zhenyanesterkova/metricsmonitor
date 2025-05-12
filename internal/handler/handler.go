@@ -65,6 +65,7 @@ func NewRepositorieHandler(
 	key *string,
 	pathToPrivateKey string,
 	trustIPNet *net.IPNet,
+
 ) *RepositorieHandler {
 	return &RepositorieHandler{
 		Repo:             rep,
