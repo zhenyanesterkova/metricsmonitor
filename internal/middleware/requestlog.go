@@ -9,11 +9,6 @@ import (
 
 func (lm MiddlewareStruct) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPprofPath(r.URL.Path) {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		start := time.Now()
 
 		defer func() {

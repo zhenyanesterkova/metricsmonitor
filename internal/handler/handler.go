@@ -77,40 +77,42 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) error {
 	if err != nil {
 		return fmt.Errorf("failed create struct for middleware: %w", err)
 	}
-	router.Use(mdlWare.ResetRespDataStruct)
-	router.Use(mdlWare.RequestLogger)
-	if rh.hashKey != nil {
-		router.Use(mdlWare.CheckSignData)
-	}
-	router.Use(mdlWare.DecryptionMiddleware)
-	router.Use(mdlWare.GZipMiddleware)
-	router.Route("/", func(r chi.Router) {
-		r.Get("/", rh.GetAllMetrics)
-		r.Get("/ping", rh.Ping)
-		r.Route("/value/", func(r chi.Router) {
-			r.Post("/", rh.GetMetricValueJSON)
-			r.Get("/{typeMetric}/{nameMetric}", rh.GetMetricValue)
-		})
 
-		r.Route("/updates/", func(r chi.Router) {
-			r.Post("/", rh.UpdateManyMetrics)
-		})
-		r.Route("/update/", func(r chi.Router) {
-			r.Post("/", rh.UpdateMetricJSON)
-			r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
-		})
-		r.Route("/debug/pprof/", func(r chi.Router) {
-			r.Get("/", pprof.Index)
-			r.Get("/cmdline", pprof.Cmdline)
-			r.Get("/symbol", pprof.Symbol)
-			r.Get("/trace", pprof.Trace)
-			r.Get("/profile", pprof.Profile)
-			r.Handle("/goroutine", pprof.Handler("goroutine"))
-			r.Handle("/threadcreate", pprof.Handler("threadcreate"))
-			r.Handle("/heap", pprof.Handler("heap"))
-			r.Handle("/block", pprof.Handler("block"))
-			r.Handle("/mutex", pprof.Handler("mutex"))
-			r.Handle("/allocs", pprof.Handler("allocs"))
+	router.Get("/debug/pprof/", pprof.Index)
+	router.Get("/debug/pprof/cmdline", pprof.Cmdline)
+	router.Get("/debug/pprof/symbol", pprof.Symbol)
+	router.Get("/debug/pprof/trace", pprof.Trace)
+	router.Get("/debug/pprof/profile", pprof.Profile)
+	router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+	router.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
+	router.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
+
+	router.Group(func(r chi.Router) {
+		r.Use(mdlWare.ResetRespDataStruct)
+		r.Use(mdlWare.RequestLogger)
+		if rh.hashKey != nil {
+			r.Use(mdlWare.CheckSignData)
+		}
+		r.Use(mdlWare.DecryptionMiddleware)
+		r.Use(mdlWare.GZipMiddleware)
+		r.Route("/", func(r chi.Router) {
+			r.Get("/", rh.GetAllMetrics)
+			r.Get("/ping", rh.Ping)
+			r.Route("/value/", func(r chi.Router) {
+				r.Post("/", rh.GetMetricValueJSON)
+				r.Get("/{typeMetric}/{nameMetric}", rh.GetMetricValue)
+			})
+
+			r.Route("/updates/", func(r chi.Router) {
+				r.Post("/", rh.UpdateManyMetrics)
+			})
+			r.Route("/update/", func(r chi.Router) {
+				r.Post("/", rh.UpdateMetricJSON)
+				r.Post("/{typeMetric}/{nameMetric}/{valueMetric}", rh.UpdateMetric)
+			})
 		})
 	})
 	return nil

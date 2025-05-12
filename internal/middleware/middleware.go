@@ -55,10 +55,6 @@ func NewMiddlewareStruct(
 
 func (lm MiddlewareStruct) ResetRespDataStruct(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPprofPath(r.URL.Path) {
-			next.ServeHTTP(w, r)
-			return
-		}
 		lm.respData.responseData.size = 0
 		lm.respData.responseData.status = 0
 		lm.respData.ResponseWriter = w

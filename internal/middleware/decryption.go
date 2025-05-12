@@ -22,11 +22,6 @@ func isEncryption(cType string) bool {
 
 func (lm MiddlewareStruct) DecryptionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPprofPath(r.URL.Path) {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		contentType := r.Header.Get("Content-Type")
 		if !isEncryption(contentType) {
 			next.ServeHTTP(w, r)
