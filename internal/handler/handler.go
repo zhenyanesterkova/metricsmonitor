@@ -12,6 +12,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
@@ -51,7 +52,8 @@ type RepositorieHandler struct {
 	// Logger is a logging utility used to record events and errors.
 	Logger logger.LogrusLogger
 	// hashKey is a key for calculating the hash.
-	hashKey *string
+	hashKey    *string
+	trustIPNet *net.IPNet
 	// pathToPrivateKey used to store the path to a file containing an asymmetric encryption private key
 	pathToPrivateKey string
 }
@@ -62,12 +64,15 @@ func NewRepositorieHandler(
 	log logger.LogrusLogger,
 	key *string,
 	pathToPrivateKey string,
+	trustIPNet *net.IPNet,
+
 ) *RepositorieHandler {
 	return &RepositorieHandler{
 		Repo:             rep,
 		Logger:           log,
 		hashKey:          key,
 		pathToPrivateKey: pathToPrivateKey,
+		trustIPNet:       trustIPNet,
 	}
 }
 

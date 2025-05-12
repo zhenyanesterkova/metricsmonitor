@@ -82,6 +82,7 @@ func run() error {
 		loggerInst,
 		cfg.SConfig.HashKey,
 		cfg.SConfig.CryptoPrivateKeyPath,
+		cfg.SConfig.TIpNet,
 	)
 	err = repoHandler.InitChiRouter(router)
 	if err != nil {

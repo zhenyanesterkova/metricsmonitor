@@ -17,6 +17,7 @@ type flags struct {
 	hashKey         *string
 	fileStoragePath string
 	dsn             string
+	strCIDR         string
 	tempDur         int
 	restore         bool
 }
@@ -44,6 +45,14 @@ func (c *Config) parseFlagsVariables() *flags {
 		"l",
 		logLevel,
 		"log level",
+	)
+
+	CIDRflag := ""
+	flag.StringVar(
+		&CIDRflag,
+		"t",
+		CIDRflag,
+		"trusted subnet",
 	)
 
 	var tempDur int
@@ -115,6 +124,7 @@ func (c *Config) parseFlagsVariables() *flags {
 		restore:         restore,
 		dsn:             dsn,
 		hashKey:         &hashKey,
+		strCIDR:         CIDRflag,
 	}
 	return res
 }
@@ -129,6 +139,11 @@ func (c *Config) setFlagsVariables(f *flags) error {
 	if isFlagPassed("l") {
 		c.LConfig.Level = f.logLevel
 	}
+
+	if isFlagPassed("t") {
+		c.SConfig.StringCIDR = f.strCIDR
+	}
+
 	if isFlagPassed("crypto-key") {
 		c.SConfig.CryptoPrivateKeyPath = f.cryptoKey
 	}
