@@ -16,6 +16,12 @@ func (c *Config) setEnvAddress() {
 	}
 }
 
+func (c *Config) setEnvCryptoKeyPath() {
+	if crypto, ok := os.LookupEnv("CRYPTO_KEY"); ok {
+		c.CryptoKeyPath = crypto
+	}
+}
+
 func (c *Config) setEnvHashKey() {
 	if key, ok := os.LookupEnv("KEY"); ok {
 		c.HashKey = &key
@@ -61,6 +67,8 @@ func (c *Config) buildEnv() error {
 	c.setEnvAddress()
 
 	c.setEnvHashKey()
+
+	c.setEnvCryptoKeyPath()
 
 	err := c.setEnvPollInterval()
 	if err != nil {

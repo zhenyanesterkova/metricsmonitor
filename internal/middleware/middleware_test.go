@@ -75,7 +75,8 @@ func TestMiddleware(t *testing.T) {
 	require.NoError(t, err)
 
 	key := hashKey
-	mdlWare := NewMiddlewareStruct(loggerInst, &key)
+	mdlWare, err := NewMiddlewareStruct(loggerInst, &key, "./testdata/crypto/private.crt")
+	require.NoError(t, err)
 
 	router := chi.NewRouter()
 
@@ -94,9 +95,6 @@ func TestMiddleware(t *testing.T) {
 			_, _ = w.Write([]byte("{}"))
 		})
 		r.Get("/pingempty", func(w http.ResponseWriter, r *http.Request) {
-		})
-		r.Get("/debug/pprof/", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
 		})
 	})
 
@@ -138,9 +136,6 @@ func TestMiddleware(t *testing.T) {
 			"/ping",
 			params,
 			"")
-		resp = testRequest(t, ts, http.MethodGet, "/debug/pprof/heap", params, "")
-		require.Equal(t, mdlWare.respData.responseData.size, 16)
-		require.Equal(t, mdlWare.respData.responseData.status, 200)
 	})
 
 	t.Run("Middleware", func(t *testing.T) {

@@ -1,0 +1,23 @@
+{
+    "db_config": {
+        "postgres_storage": {
+            "database_dsn": "fromjson"
+        },
+        "file_storage": {
+            "store_file": "fromjson",
+            "store_interval": 500,
+            "restore": true
+        }
+    },
+    "server_config": {
+        "address": "fromjson",
+        "crypto_key": "fromjson",
+        "crypto_pub_key": "fromjson",
+        "need-gen": true,
+        "hashkey": "fromjson",
+        "config_file_name": "fromjson"
+    },
+    "log_config": {
+        "log_level": "fromjson"
+    }
+}

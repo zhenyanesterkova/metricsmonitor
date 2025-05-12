@@ -15,6 +15,13 @@ func (c *Config) setEnvServerConfig() {
 	if envHashKey, ok := os.LookupEnv("KEY"); ok {
 		c.SConfig.HashKey = &envHashKey
 	}
+	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_KEY"); ok {
+		c.SConfig.CryptoPrivateKeyPath = envCryptoKeyPath
+	}
+
+	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_PUB_KEY"); ok {
+		c.SConfig.CryptoPublicKeyPath = envCryptoKeyPath
+	}
 }
 
 func (c *Config) setEnvLoggerConfig() {
@@ -56,10 +63,11 @@ func (c *Config) setDBConfig() error {
 
 func (c *Config) envBuild() error {
 	c.setEnvServerConfig()
+
 	c.setEnvLoggerConfig()
 	err := c.setDBConfig()
 	if err != nil {
-		return fmt.Errorf("build env config error: %w", err)
+		return fmt.Errorf("build env logger config error: %w", err)
 	}
 	return nil
 }

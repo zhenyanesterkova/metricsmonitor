@@ -1,0 +1,15 @@
+{
+    "db_config": {
+        "postgres_storage": {
+            "database_dsn": ""
+        }
+    },
+    "server_config": {
+        "crypto_key": "example-private.crt",
+        "crypto_pub_key": "example-public.crt",
+        "need-gen": false
+    },
+    "log_config": {
+        "log_level": "info"
+    }
+}

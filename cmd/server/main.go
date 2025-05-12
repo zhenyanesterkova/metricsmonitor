@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgerrcode"
@@ -78,11 +77,20 @@ func run() error {
 
 	router := chi.NewRouter()
 
-	repoHandler := handler.NewRepositorieHandler(retryStore, loggerInst, cfg.SConfig.HashKey)
-	repoHandler.InitChiRouter(router)
+	repoHandler := handler.NewRepositorieHandler(
+		retryStore,
+		loggerInst,
+		cfg.SConfig.HashKey,
+		cfg.SConfig.CryptoPrivateKeyPath,
+	)
+	err = repoHandler.InitChiRouter(router)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("can not init router: %v", err)
+		return fmt.Errorf("failed init router: %w", err)
+	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(c, os.Interrupt)
 
 	loggerInst.LogrusLog.Infof("Build version: %s\n", buildVersion)
 	loggerInst.LogrusLog.Infof("Build date: %s\n", buildDate)

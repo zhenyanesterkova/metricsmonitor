@@ -9,6 +9,11 @@ import (
 )
 
 type flags struct {
+	adress          string
+	config          string
+	logLevel        string
+	cryptoKey       string
+	cryptoPublicKey string
 	hashKey         *string
 	fileStoragePath string
 	dsn             string
@@ -16,18 +21,28 @@ type flags struct {
 	restore         bool
 }
 
-func (c *Config) parseFlagsVariables() flags {
+func (c *Config) parseFlagsVariables() *flags {
+	adress := ""
 	flag.StringVar(
-		&c.SConfig.Address,
+		&adress,
 		"a",
-		c.SConfig.Address,
+		adress,
 		"address and port to run server",
 	)
 
+	config := ""
 	flag.StringVar(
-		&c.LConfig.Level,
+		&config,
+		"c",
+		config,
+		"config name",
+	)
+
+	logLevel := ""
+	flag.StringVar(
+		&logLevel,
 		"l",
-		c.LConfig.Level,
+		logLevel,
 		"log level",
 	)
 
@@ -35,7 +50,7 @@ func (c *Config) parseFlagsVariables() flags {
 	flag.IntVar(
 		&tempDur,
 		"i",
-		DefaultStoreInterval,
+		tempDur,
 		"store interval",
 	)
 
@@ -71,9 +86,30 @@ func (c *Config) parseFlagsVariables() flags {
 		"hash key",
 	)
 
+	cryptoKey := ""
+	flag.StringVar(
+		&cryptoKey,
+		"crypto-key",
+		cryptoKey,
+		"path to the file with the private key",
+	)
+
+	cryptoPublicKey := ""
+	flag.StringVar(
+		&cryptoPublicKey,
+		"crypto-pub-key",
+		cryptoPublicKey,
+		"path to the file with the public key",
+	)
+
 	flag.Parse()
 
-	res := flags{
+	res := &flags{
+		adress:          adress,
+		config:          config,
+		logLevel:        logLevel,
+		cryptoKey:       cryptoKey,
+		cryptoPublicKey: cryptoPublicKey,
 		fileStoragePath: fileStoragePath,
 		tempDur:         tempDur,
 		restore:         restore,
@@ -83,7 +119,22 @@ func (c *Config) parseFlagsVariables() flags {
 	return res
 }
 
-func (c *Config) setFlagsVariables(f flags) error {
+func (c *Config) setFlagsVariables(f *flags) error {
+	if isFlagPassed("a") {
+		c.SConfig.Address = f.adress
+	}
+	if isFlagPassed("c") {
+		c.SConfig.ConfigsFileName = f.config
+	}
+	if isFlagPassed("l") {
+		c.LConfig.Level = f.logLevel
+	}
+	if isFlagPassed("crypto-key") {
+		c.SConfig.CryptoPrivateKeyPath = f.cryptoKey
+	}
+	if isFlagPassed("crypto-pub-key") {
+		c.SConfig.CryptoPublicKeyPath = f.cryptoPublicKey
+	}
 	if isFlagPassed("f") {
 		c.DBConfig.FileStorageConfig.FileStoragePath = f.fileStoragePath
 	}
@@ -114,8 +165,7 @@ func (c *Config) setFlagsVariables(f flags) error {
 	return nil
 }
 
-func (c *Config) flagBuild() error {
-	flagsVar := c.parseFlagsVariables()
+func (c *Config) flagBuild(flagsVar *flags) error {
 	err := c.setFlagsVariables(flagsVar)
 	if err != nil {
 		return fmt.Errorf("failed set cfg from flags var: %w", err)

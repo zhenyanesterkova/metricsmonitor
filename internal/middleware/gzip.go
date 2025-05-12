@@ -11,7 +11,8 @@ import (
 
 func isCompression(cType string) bool {
 	if cType == "application/json" ||
-		cType == "text/html" {
+		cType == "text/html" ||
+		cType == "application/octet-stream" {
 		return true
 	}
 
@@ -20,11 +21,6 @@ func isCompression(cType string) bool {
 
 func (lm MiddlewareStruct) GZipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPprofPath(r.URL.Path) {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		ow := w
 
 		supportsGzip := false
