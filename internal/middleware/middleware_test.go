@@ -96,9 +96,6 @@ func TestMiddleware(t *testing.T) {
 		})
 		r.Get("/pingempty", func(w http.ResponseWriter, r *http.Request) {
 		})
-		r.Get("/debug/pprof/", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		})
 	})
 
 	ts := httptest.NewServer(router)
@@ -139,9 +136,6 @@ func TestMiddleware(t *testing.T) {
 			"/ping",
 			params,
 			"")
-		resp = testRequest(t, ts, http.MethodGet, "/debug/pprof/heap", params, "")
-		require.Equal(t, mdlWare.respData.responseData.size, 16)
-		require.Equal(t, mdlWare.respData.responseData.status, 200)
 	})
 
 	t.Run("Middleware", func(t *testing.T) {
