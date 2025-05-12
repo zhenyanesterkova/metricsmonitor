@@ -22,6 +22,10 @@ func (c *Config) setEnvServerConfig() {
 	if envCryptoKeyPath, ok := os.LookupEnv("CRYPTO_PUB_KEY"); ok {
 		c.SConfig.CryptoPublicKeyPath = envCryptoKeyPath
 	}
+
+	if envTrustedSubnet, ok := os.LookupEnv("TRUSTED_SUBNET"); ok {
+		c.SConfig.StringCIDR = envTrustedSubnet
+	}
 }
 
 func (c *Config) setEnvLoggerConfig() {

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -146,6 +147,19 @@ func (rh *RepositorieHandler) UpdateMetric(w http.ResponseWriter, r *http.Reques
 func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
 
+	if rh.trustIPNet != nil {
+		ipStr := r.Header.Get("X-Real-IP")
+
+		ip := net.ParseIP(ipStr)
+
+		allowed := rh.trustIPNet.Contains(ip)
+
+		if !allowed {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
+
 	log.Info("updating metric ...")
 
 	newMetric := metric.New("")
@@ -236,6 +250,19 @@ func (rh *RepositorieHandler) UpdateMetricJSON(w http.ResponseWriter, r *http.Re
 //	]
 func (rh *RepositorieHandler) UpdateManyMetrics(w http.ResponseWriter, r *http.Request) {
 	log := rh.Logger.LogrusLog
+
+	if rh.trustIPNet != nil {
+		ipStr := r.Header.Get("X-Real-IP")
+
+		ip := net.ParseIP(ipStr)
+
+		allowed := rh.trustIPNet.Contains(ip)
+
+		if !allowed {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
 
 	metricsList := []metric.Metric{}
 	dec := json.NewDecoder(r.Body)

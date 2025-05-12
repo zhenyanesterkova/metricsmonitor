@@ -86,7 +86,7 @@ func TestRouter(t *testing.T) {
 
 	router := chi.NewRouter()
 
-	repoHandler := NewRepositorieHandler(memStorage, loggerInst, nil, "./testdata/crypto/private.crt")
+	repoHandler := NewRepositorieHandler(memStorage, loggerInst, nil, "./testdata/crypto/private.crt", nil)
 	err = repoHandler.InitChiRouter(router)
 	require.NoError(t, err)
 
