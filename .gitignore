@@ -27,3 +27,4 @@ vendor/
 .vscode
 
 storage.txt
+internal/app/proto
