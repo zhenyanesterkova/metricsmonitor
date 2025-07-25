@@ -1,6 +1,8 @@
 syntax = "proto3";
 package proto;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "github.com/zhenyanesterkova/metricsmonitor/internal/app/proto";
 
 message Metric {
@@ -10,38 +12,26 @@ message Metric {
     int64 delta = 4;
 }
 
-message AddMetricsRequest{
+message MetricRequest{
+    Metric metric = 1;
+}
+
+message MetricsRequest{
     repeated Metric metrics = 1;
 }
 
-message AddMetricsResponse{
-}
-
-message AddMetricRequest{
+message MetricResponse{
     Metric metric = 1;
 }
 
-message AddMetricResponse{
-    Metric metric = 1;
-}
-
-message GetMetricRequest{
-    Metric metric = 1;
-}
-
-message GetMetricResponse{
-    Metric metric = 1;
-}
-
-message GetMetricsRequest{}
-
-message HTMLMetrics{
-    string metrics = 1;
+message MetricsHTMLResponse{
+    string metricsHTML = 1;
 }
 
 service Monitor {
-    rpc AddMetric(AddMetricRequest) returns (AddMetricResponse);
-    rpc AddMetrics(AddMetricsRequest) returns(AddMetricsResponse);
-    rpc GetMetrics(GetMetricsRequest) returns (HTMLMetrics);
-    rpc GetMetric(GetMetricRequest) returns(GetMetricResponse);
+    rpc AddMetric(MetricRequest) returns (MetricResponse);
+    rpc AddMetrics(MetricsRequest) returns(google.protobuf.Empty);
+    rpc GetMetrics(google.protobuf.Empty) returns (MetricsHTMLResponse);
+    rpc GetMetric(MetricRequest) returns(MetricResponse);
+    rpc Ping(google.protobuf.Empty) returns(google.protobuf.Empty);
 }
