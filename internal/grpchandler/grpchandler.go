@@ -1,9 +1,11 @@
 package grpchandler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"text/template"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,6 +15,7 @@ import (
 	proto "github.com/zhenyanesterkova/metricsmonitor/internal/app/proto/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/metric"
+	"github.com/zhenyanesterkova/metricsmonitor/web"
 )
 
 const (
@@ -102,6 +105,81 @@ func (h *gRPCHandler) AddMetric(ctx context.Context, req *proto.MetricRequest) (
 			Type:  m.MType,
 			Value: *m.Value,
 			Delta: *m.Delta,
+		},
+	}, nil
+}
+
+func (h *gRPCHandler) AddMetrics(ctx context.Context, req *proto.MetricsRequest) (*emptypb.Empty, error) {
+	metricList := make([]metric.Metric, len(req.GetMetrics()))
+	for i, m := range req.GetMetrics() {
+		var newMetric metric.Metric
+		switch m.GetType() {
+		case metric.TypeCounter:
+			newMetric = metric.New(metric.TypeCounter)
+			*newMetric.Delta = m.GetDelta()
+		case metric.TypeGauge:
+			newMetric = metric.New(metric.TypeGauge)
+			*newMetric.Value = m.GetValue()
+		}
+		newMetric.ID = m.GetId()
+		metricList[i] = newMetric
+	}
+
+	h.logger.LogrusLog.Info("update metrics in gRPC")
+
+	uCtx := context.WithoutCancel(ctx)
+	err := h.repo.UpdateManyMetrics(uCtx, metricList)
+	if err != nil {
+		h.logger.LogrusLog.Errorf("failed update metrics: %v", err)
+		return nil, fmt.Errorf("failed update metrics: %w", status.Errorf(codes.Internal, ErrServer))
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (h *gRPCHandler) GetMetrics(ctx context.Context, req *emptypb.Empty) (*proto.MetricsHTMLResponse, error) {
+	res, err := h.repo.GetAllMetrics()
+
+	if err != nil {
+		h.logger.LogrusLog.Errorf("failed get metrics: %v", err)
+		return nil, fmt.Errorf("failed get metrics: %w", status.Errorf(codes.Internal, ErrServer))
+	}
+
+	tmplMetrics, err := template.ParseFS(web.Templates, "template/allMetricsView.html")
+	if err != nil {
+		h.logger.LogrusLog.Errorf("failed parse html template: %v", err)
+		return nil, fmt.Errorf("failed get metrics: %w", status.Errorf(codes.Internal, ErrServer))
+	}
+
+	var buf bytes.Buffer
+	err = tmplMetrics.ExecuteTemplate(&buf, "metrics", res)
+	if err != nil {
+		h.logger.LogrusLog.Errorf("failed execute html template: %v", err)
+		return nil, fmt.Errorf("failed get metrics: %w", status.Errorf(codes.Internal, ErrServer))
+	}
+
+	return &proto.MetricsHTMLResponse{
+		MetricsHTML: buf.String(),
+	}, nil
+}
+
+func (h *gRPCHandler) GetMetric(ctx context.Context, req *proto.MetricRequest) (*proto.MetricResponse, error) {
+	res, err := h.repo.GetMetricValue(req.GetMetric().GetId(), req.GetMetric().GetType())
+
+	if err != nil {
+		if errors.Is(err, metric.ErrUnknownMetric) || errors.Is(err, metric.ErrInvalidType) {
+			return nil, fmt.Errorf("failed get metric: %w", status.Error(codes.NotFound, "check id and type of the metric"))
+		}
+		h.logger.LogrusLog.Errorf("get metric value: %v", err)
+		return nil, fmt.Errorf("failed get metric: %w", status.Errorf(codes.Internal, ErrServer))
+	}
+
+	return &proto.MetricResponse{
+		Metric: &proto.Metric{
+			Id:    res.ID,
+			Type:  res.MType,
+			Value: *res.Value,
+			Delta: *res.Delta,
 		},
 	}, nil
 }
