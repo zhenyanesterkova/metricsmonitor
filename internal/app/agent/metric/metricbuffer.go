@@ -8,6 +8,8 @@ import (
 
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
+
+	pb "github.com/zhenyanesterkova/metricsmonitor/internal/app/proto/metric"
 )
 
 const (
@@ -165,6 +167,29 @@ func (buf *MetricBuf) GetMetricsList() []Metric {
 		mList = append(mList, *m)
 	}
 	return mList
+}
+
+func (buf *MetricBuf) GetMetricsListForGRPC() []*pb.Metric {
+	buf.mutex.Lock()
+	defer buf.mutex.Unlock()
+
+	pbMetrics := make([]*pb.Metric, 0, len(buf.Metrics))
+	for _, m := range buf.Metrics {
+		pbMetric := &pb.Metric{
+			Id:   m.ID,
+			Type: m.MType,
+		}
+
+		if m.Delta != nil {
+			pbMetric.Delta = *m.Delta
+		}
+		if m.Value != nil {
+			pbMetric.Value = *m.Value
+		}
+
+		pbMetrics = append(pbMetrics, pbMetric)
+	}
+	return pbMetrics
 }
 
 func (buf *MetricBuf) UpdateMetrics() {

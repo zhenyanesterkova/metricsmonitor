@@ -9,6 +9,7 @@ import (
 	"os/signal"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/config"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/grpcsender"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/sender"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/statistic"
@@ -29,10 +30,22 @@ func main() {
 	stats := statistic.New(metrics, cfg.PollInterval)
 
 	address := fmt.Sprintf("http://%s/updates/", cfg.Address)
-	senderStat, err := sender.New(address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit, cfg.CryptoKeyPath)
+
+	s, err := sender.New(address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit, cfg.CryptoKeyPath)
 	if err != nil {
 		log.Fatalf("an error occurred while create the sender: %v", err)
 	}
+
+	sGRPC, err := grpcsender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit, cfg.CryptoKeyPath)
+	if err != nil {
+		log.Fatalf("an error occurred while create the grpc sender: %v", err)
+	}
+	defer func() {
+		err := sGRPC.Close()
+		if err != nil {
+			log.Fatalf("failed close grpc conn: %v", err)
+		}
+	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
@@ -50,7 +63,10 @@ func main() {
 	go stats.UpdateGopsutilStatistic(updateGopsutilCtx, errCh)
 
 	sendCtx := context.WithoutCancel(ctx)
-	go senderStat.SendReport(sendCtx)
+	go s.SendReport(sendCtx)
+
+	GRPCSendCtx := context.WithoutCancel(ctx)
+	go sGRPC.SendReport(GRPCSendCtx)
 
 	select {
 	case <-ctx.Done():
