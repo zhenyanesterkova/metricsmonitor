@@ -66,18 +66,22 @@ func (h *gRPCHandler) AddMetric(ctx context.Context, req *proto.MetricRequest) (
 	case metric.TypeCounter:
 		newMetric = metric.New(metric.TypeCounter)
 		*newMetric.Delta = req.GetMetric().GetDelta()
+		newMetric.ID = req.GetMetric().GetId()
+		h.logger.LogrusLog.WithFields(logrus.Fields{
+			"ID":    newMetric.ID,
+			"Type":  newMetric.MType,
+			"Delta": *newMetric.Delta,
+		}).Info("metric for updating in grpc")
 	case metric.TypeGauge:
 		newMetric = metric.New(metric.TypeGauge)
 		*newMetric.Value = req.GetMetric().GetValue()
+		newMetric.ID = req.GetMetric().GetId()
+		h.logger.LogrusLog.WithFields(logrus.Fields{
+			"ID":    newMetric.ID,
+			"Type":  newMetric.MType,
+			"Value": *newMetric.Value,
+		}).Info("metric for updating in grpc")
 	}
-	newMetric.ID = req.GetMetric().GetId()
-
-	h.logger.LogrusLog.WithFields(logrus.Fields{
-		"ID":    newMetric.ID,
-		"Type":  newMetric.MType,
-		"Value": *newMetric.Value,
-		"Delta": *newMetric.Delta,
-	}).Info("metric for updating in grpc")
 
 	m, err := h.repo.UpdateMetric(newMetric)
 	if err != nil {
@@ -99,14 +103,19 @@ func (h *gRPCHandler) AddMetric(ctx context.Context, req *proto.MetricRequest) (
 		}
 	}
 
-	return &proto.MetricResponse{
+	result := &proto.MetricResponse{
 		Metric: &proto.Metric{
-			Id:    m.ID,
-			Type:  m.MType,
-			Value: *m.Value,
-			Delta: *m.Delta,
+			Id:   m.ID,
+			Type: m.MType,
 		},
-	}, nil
+	}
+	switch m.MType {
+	case metric.TypeCounter:
+		result.Metric.Delta = *m.Delta
+	case metric.TypeGauge:
+		result.Metric.Value = *m.Value
+	}
+	return result, nil
 }
 
 func (h *gRPCHandler) AddMetrics(ctx context.Context, req *proto.MetricsRequest) (*emptypb.Empty, error) {
@@ -174,12 +183,17 @@ func (h *gRPCHandler) GetMetric(ctx context.Context, req *proto.MetricRequest) (
 		return nil, fmt.Errorf("failed get metric: %w", status.Errorf(codes.Internal, ErrServer))
 	}
 
-	return &proto.MetricResponse{
+	result := &proto.MetricResponse{
 		Metric: &proto.Metric{
-			Id:    res.ID,
-			Type:  res.MType,
-			Value: *res.Value,
-			Delta: *res.Delta,
+			Id:   res.ID,
+			Type: res.MType,
 		},
-	}, nil
+	}
+	switch res.MType {
+	case metric.TypeCounter:
+		result.Metric.Delta = *res.Delta
+	case metric.TypeGauge:
+		result.Metric.Value = *res.Value
+	}
+	return result, nil
 }
