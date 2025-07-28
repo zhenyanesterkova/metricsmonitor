@@ -81,7 +81,7 @@ func run() error {
 	loggerInst.LogrusLog.Infof("Build date: %s\n", buildDate)
 	loggerInst.LogrusLog.Infof("Build commit: %s\n", buildCommit)
 
-	listen, err := net.Listen("tcp", ":3200")
+	listen, err := net.Listen("tcp", cfg.SConfig.Address)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("failed listen announces on the local network address: %v", err)
 	}
@@ -94,7 +94,7 @@ func run() error {
 	)
 	proto.RegisterMonitorServer(s, grpcHandler)
 
-	loggerInst.LogrusLog.Info("Start gRPC Server on :3200")
+	loggerInst.LogrusLog.Infof("Start gRPC Server on %s", cfg.SConfig.Address)
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			loggerInst.LogrusLog.Errorf("grpc server error: %v", err)
