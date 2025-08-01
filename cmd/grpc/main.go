@@ -97,6 +97,16 @@ func run() error {
 	}
 
 	creds, err := credentials.NewServerTLSFromFile(cfg.SConfig.CertPath, cfg.SConfig.KeyPath)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf(
+			"failed constructs TLS credentials from the input certificate file and key file for server: %v",
+			err,
+		)
+		return fmt.Errorf(
+			"failed constructs TLS credentials from the input certificate file and key file for server: %w",
+			err,
+		)
+	}
 
 	s := grpc.NewServer(
 		grpc.Creds(creds),

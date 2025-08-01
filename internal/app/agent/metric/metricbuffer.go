@@ -2,7 +2,7 @@ package metric
 
 import (
 	"fmt"
-	"math/rand/v2"
+	"math/rand"
 	"runtime"
 	"sync"
 

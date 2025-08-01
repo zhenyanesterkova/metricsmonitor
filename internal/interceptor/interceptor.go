@@ -125,8 +125,14 @@ func (is InterceptorStruct) GzipUnary() grpc.UnaryServerInterceptor {
 
 		for _, v := range hashValues {
 			if v == "gzip" {
-				grpc.SetHeader(ctx, metadata.Pairs("content-encoding", "gzip"))
-				grpc.SetSendCompressor(ctx, gzip.Name)
+				err := grpc.SetHeader(ctx, metadata.Pairs("content-encoding", "gzip"))
+				if err != nil {
+					return nil, fmt.Errorf("failed sets the header metadata to be sent from the server to the client: %w", err)
+				}
+				err = grpc.SetSendCompressor(ctx, gzip.Name)
+				if err != nil {
+					return nil, fmt.Errorf("failed sets a compressor for outbound messages from the server: %w", err)
+				}
 				return handler(ctx, req)
 			}
 		}
@@ -148,27 +154,3 @@ func serializeRequest(template any) ([]byte, error) {
 
 	return newMsg, nil
 }
-
-// Пример использования интерцепторов при создании gRPC сервера:
-/*
-func CreateGRPCServer(interceptors InterceptorStruct) *grpc.Server {
-	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		interceptors.RequestLoggerUnary(),
-		interceptors.CheckSignDataUnary(),
-		interceptors.GZipUnary(),
-		interceptors.DecryptionUnary(),
-	}
-
-	streamInterceptors := []grpc.StreamServerInterceptor{
-		interceptors.RequestLoggerStream(),
-		interceptors.CheckSignDataStream(),
-	}
-
-	server := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(unaryInterceptors...),
-		grpc.ChainStreamInterceptor(streamInterceptors...),
-	)
-
-	return server
-}
-*/
