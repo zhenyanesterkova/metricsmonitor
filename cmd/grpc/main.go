@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -15,8 +16,11 @@ import (
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/config"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/logger"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/grpchandler"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/interceptor"
 	"github.com/zhenyanesterkova/metricsmonitor/internal/storage/retrystorage"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 var buildVersion = "N/A"
@@ -84,9 +88,39 @@ func run() error {
 	listen, err := net.Listen("tcp", cfg.SConfig.Address)
 	if err != nil {
 		loggerInst.LogrusLog.Errorf("failed listen announces on the local network address: %v", err)
+		return fmt.Errorf("failed listen announces on the local network address: %w", err)
 	}
 
-	s := grpc.NewServer()
+	interceptors, err := interceptor.NewInterceptorStruct(loggerInst, cfg.SConfig.HashKey)
+	if err != nil {
+		loggerInst.LogrusLog.Errorf("failed create interceptor: %v", err)
+		return fmt.Errorf("failed create interceptor: %w", err)
+	}
+
+	config := &tls.Config{
+		ClientAuth: tls.NoClientCert,
+	}
+
+	if cfg.SConfig.CertPath != "" && cfg.SConfig.KeyPath != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.SConfig.CertPath, cfg.SConfig.KeyPath)
+		if err != nil {
+			loggerInst.LogrusLog.Errorf("failed to load TLS certificates: %v", err)
+			return fmt.Errorf("failed to load TLS certificates: %w", err)
+		}
+
+		config.Certificates = []tls.Certificate{cert}
+	}
+
+	creds := credentials.NewTLS(config)
+
+	s := grpc.NewServer(
+		grpc.Creds(creds),
+		grpc.ChainUnaryInterceptor(
+			interceptors.RequestLoggerUnary(),
+			interceptors.CheckSignDataUnary(),
+			interceptors.GzipUnary(),
+		),
+	)
 
 	grpcHandler := grpchandler.New(
 		retryStore,
