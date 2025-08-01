@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -97,21 +96,7 @@ func run() error {
 		return fmt.Errorf("failed create interceptor: %w", err)
 	}
 
-	config := &tls.Config{
-		ClientAuth: tls.NoClientCert,
-	}
-
-	if cfg.SConfig.CertPath != "" && cfg.SConfig.KeyPath != "" {
-		cert, err := tls.LoadX509KeyPair(cfg.SConfig.CertPath, cfg.SConfig.KeyPath)
-		if err != nil {
-			loggerInst.LogrusLog.Errorf("failed to load TLS certificates: %v", err)
-			return fmt.Errorf("failed to load TLS certificates: %w", err)
-		}
-
-		config.Certificates = []tls.Certificate{cert}
-	}
-
-	creds := credentials.NewTLS(config)
+	creds, err := credentials.NewServerTLSFromFile(cfg.SConfig.CertPath, cfg.SConfig.KeyPath)
 
 	s := grpc.NewServer(
 		grpc.Creds(creds),

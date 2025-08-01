@@ -13,7 +13,6 @@ import (
 	pb "github.com/zhenyanesterkova/metricsmonitor/internal/app/proto/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -29,7 +28,6 @@ type GRPCSender struct {
 	client                  pb.MonitorClient
 	conn                    *grpc.ClientConn
 	hashKey                 *string
-	cipher                  bool
 	endpoint                string
 	requestAttemptIntervals []string
 	reportInterval          time.Duration
@@ -48,17 +46,9 @@ func New(
 	rateLimit int,
 	pathToPublicKey string,
 ) (*GRPCSender, error) {
-	var isChipper bool
-	var creds credentials.TransportCredentials
-	if pathToPublicKey != "" {
-		var err error
-		creds, err = credentials.NewClientTLSFromFile(pathToPublicKey, "localhost")
-		if err != nil {
-			return nil, fmt.Errorf("%s failed to constructs TLS credentials from the provided root certificate: %w", op, err)
-		}
-		isChipper = true
-	} else {
-		creds = insecure.NewCredentials()
+	creds, err := credentials.NewClientTLSFromFile(pathToPublicKey, "")
+	if err != nil {
+		return nil, fmt.Errorf("%s failed to constructs TLS credentials from the provided root certificate: %w", op, err)
 	}
 
 	conn, err := grpc.NewClient(
@@ -91,7 +81,6 @@ func New(
 		},
 		hashKey:   hashKey,
 		rateLimit: rateLimit,
-		cipher:    isChipper,
 	}, nil
 }
 
@@ -133,9 +122,7 @@ func (s *GRPCSender) SendQueryUpdateMetrics() error {
 		md.Set("hashsha256", sum)
 	}
 
-	if s.cipher {
-		md.Set("encrypted", "true")
-	}
+	md.Set("encrypted", "true")
 
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
