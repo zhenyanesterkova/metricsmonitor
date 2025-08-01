@@ -16,9 +16,22 @@ func (c *Config) setEnvAddress() {
 	}
 }
 
+func (c *Config) setEnvGRPCAddress() {
+	if addr, ok := os.LookupEnv("GRPC_ADDRESS"); ok {
+		log.Printf("env:GRPC_ADDRESS=%s", addr)
+		c.GRPCAddress = addr
+	}
+}
+
 func (c *Config) setEnvCryptoKeyPath() {
 	if crypto, ok := os.LookupEnv("CRYPTO_KEY"); ok {
 		c.CryptoKeyPath = crypto
+	}
+}
+
+func (c *Config) setEnvCertPath() {
+	if cert, ok := os.LookupEnv("CERT_PATH"); ok {
+		c.CertPath = cert
 	}
 }
 
@@ -66,9 +79,13 @@ func (c *Config) setEnvRateLimit() error {
 func (c *Config) buildEnv() error {
 	c.setEnvAddress()
 
+	c.setEnvGRPCAddress()
+
 	c.setEnvHashKey()
 
 	c.setEnvCryptoKeyPath()
+
+	c.setEnvCertPath()
 
 	err := c.setEnvPollInterval()
 	if err != nil {

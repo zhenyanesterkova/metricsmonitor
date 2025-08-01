@@ -6,6 +6,8 @@ const (
 	DefaultServerAddress        = "localhost:8080"
 	DefaultCryptoPrivateKeyPath = "example-private.crt"
 	DefaultCryptoPublicKeyPath  = "example-public.crt"
+	DefaultCertPath             = "server.crt"
+	DefaultKeyPath              = "server.key"
 	DefualtNeedGenKeys          = false
 	DefaultConfigsFileName      = "server_config.json"
 )
@@ -16,6 +18,8 @@ type ServerConfig struct {
 	Address              string     `json:"address"`
 	CryptoPrivateKeyPath string     `json:"crypto_key"`
 	CryptoPublicKeyPath  string     `json:"crypto_pub_key"`
+	CertPath             string     `json:"cert_path"`
+	KeyPath              string     `json:"key_path"`
 	ConfigsFileName      string     `json:"config_file_name"`
 	StringCIDR           string     `json:"trusted_subnet"`
 }

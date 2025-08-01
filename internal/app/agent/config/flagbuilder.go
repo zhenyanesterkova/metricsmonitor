@@ -11,7 +11,9 @@ import (
 type flags struct {
 	hashKey        *string
 	address        string
+	GRPCAddress    string
 	cryptoKeyPath  string
+	certPath       string
 	configFileName string
 	pollInterval   int
 	reportInterval int
@@ -27,12 +29,28 @@ func (c *Config) parseFlagsVariables() *flags {
 		"address and port to run server",
 	)
 
+	GRPCAddress := ""
+	flag.StringVar(
+		&GRPCAddress,
+		"grpc-a",
+		GRPCAddress,
+		"address and port to run gRPC server",
+	)
+
 	cryptoKey := ""
 	flag.StringVar(
 		&cryptoKey,
 		"crypto-key",
 		cryptoKey,
 		"path to the file with the public key",
+	)
+
+	certPath := ""
+	flag.StringVar(
+		&certPath,
+		"cert-path",
+		certPath,
+		"path to the file with the certificate",
 	)
 
 	key := ""
@@ -54,7 +72,9 @@ func (c *Config) parseFlagsVariables() *flags {
 
 	res := &flags{
 		address:        adress,
+		GRPCAddress:    GRPCAddress,
 		cryptoKeyPath:  cryptoKey,
+		certPath:       certPath,
 		hashKey:        &key,
 		pollInterval:   durPoll,
 		reportInterval: durRep,
@@ -68,6 +88,10 @@ func (c *Config) parseFlagsVariables() *flags {
 func (c *Config) setFlagsVariables(f *flags) error {
 	if isFlagPassed("a") {
 		c.Address = f.address
+	}
+
+	if isFlagPassed("grpc-a") {
+		c.GRPCAddress = f.GRPCAddress
 	}
 
 	if isFlagPassed("k") {
@@ -96,6 +120,10 @@ func (c *Config) setFlagsVariables(f *flags) error {
 
 	if isFlagPassed("crypto-key") {
 		c.CryptoKeyPath = f.cryptoKeyPath
+	}
+
+	if isFlagPassed("cert-path") {
+		c.CertPath = f.certPath
 	}
 
 	return nil

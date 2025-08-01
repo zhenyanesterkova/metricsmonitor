@@ -20,6 +20,8 @@ func New() *Config {
 			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
 			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
 			ConfigsFileName:      DefaultConfigsFileName,
+			CertPath:             DefaultCertPath,
+			KeyPath:              DefaultKeyPath,
 		},
 		LConfig: LoggerConfig{
 			Level: DefaultLogLevel,

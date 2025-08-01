@@ -6,17 +6,21 @@ import (
 
 const (
 	defaultAddress        = "localhost:8080"
+	defaultGRPCAddress    = "localhost:8888"
 	defaultPollInt        = 2
 	defaultReportInt      = 10
 	defaultRateLimit      = 3
 	defaultCryptoKeyPath  = "example-public.crt"
+	DefaultCertPath       = "agent.crt"
 	defaultConfigFileName = "agent_config.json"
 )
 
 type Config struct {
 	HashKey        *string       `json:"hash_key"`
 	Address        string        `json:"address"`
+	GRPCAddress    string        `json:"grpc_address"`
 	CryptoKeyPath  string        `json:"crypto_key"`
+	CertPath       string        `json:"cert_path"`
 	ConfigFileName string        `json:"config"`
 	PollInterval   time.Duration `json:"poll_interval"`
 	ReportInterval time.Duration `json:"report_interval"`
@@ -26,10 +30,12 @@ type Config struct {
 func New() *Config {
 	return &Config{
 		Address:        defaultAddress,
+		GRPCAddress:    defaultGRPCAddress,
 		PollInterval:   defaultPollInt * time.Second,
 		ReportInterval: defaultReportInt * time.Second,
 		RateLimit:      defaultRateLimit,
 		CryptoKeyPath:  defaultCryptoKeyPath,
+		CertPath:       DefaultCertPath,
 		ConfigFileName: defaultConfigFileName,
 	}
 }
