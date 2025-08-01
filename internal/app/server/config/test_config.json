@@ -13,6 +13,8 @@
         "address": "fromjson",
         "crypto_key": "fromjson",
         "crypto_pub_key": "fromjson",
+        "cert_path": "fromjson",
+        "key_path": "fromjson",
         "need-gen": true,
         "hashkey": "fromjson",
         "config_file_name": "fromjson"

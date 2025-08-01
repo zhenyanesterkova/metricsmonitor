@@ -132,12 +132,38 @@ func SetTestFlags(c *Config) (*flags, error) {
 		return nil, fmt.Errorf("failed set flag -crypto-pub-key: %w", err)
 	}
 
+	cert := ""
+	flag.StringVar(
+		&cert,
+		"cert-path",
+		cert,
+		"path to the file with the certificate",
+	)
+	err = flag.CommandLine.Set("cert-path", "testfromflag")
+	if err != nil {
+		return nil, fmt.Errorf("failed set flag -cert-path: %w", err)
+	}
+
+	keyPath := ""
+	flag.StringVar(
+		&keyPath,
+		"key-path",
+		keyPath,
+		"path to the file with the key",
+	)
+	err = flag.CommandLine.Set("key-path", "testfromflag")
+	if err != nil {
+		return nil, fmt.Errorf("failed set flag -key-path: %w", err)
+	}
+
 	return &flags{
 		adress:          adress,
 		config:          config,
 		logLevel:        logLevel,
 		cryptoKey:       cryptoKey,
 		cryptoPublicKey: cryptoPublicKey,
+		certPath:        cert,
+		keyPath:         keyPath,
 		fileStoragePath: fileStoragePath,
 		tempDur:         tempDur,
 		restore:         restore,
@@ -152,6 +178,8 @@ func TestConfig(t *testing.T) {
 			Address:              DefaultServerAddress,
 			CryptoPrivateKeyPath: DefaultCryptoPrivateKeyPath,
 			CryptoPublicKeyPath:  DefaultCryptoPublicKeyPath,
+			CertPath:             DefaultCertPath,
+			KeyPath:              DefaultKeyPath,
 			ConfigsFileName:      DefaultConfigsFileName,
 		},
 		LConfig: LoggerConfig{
@@ -191,6 +219,8 @@ func TestConfig(t *testing.T) {
 				HashKey:              &hashKey,
 				CryptoPrivateKeyPath: "testfromflag",
 				CryptoPublicKeyPath:  "testfromflag",
+				CertPath:             "testfromflag",
+				KeyPath:              "testfromflag",
 				ConfigsFileName:      "config.json",
 			},
 			LConfig: LoggerConfig{
@@ -227,6 +257,12 @@ func TestConfig(t *testing.T) {
 		err = os.Setenv("KEY", key)
 		require.NoError(t, err)
 
+		err = os.Setenv("CERT_PATH", "fromenv")
+		require.NoError(t, err)
+
+		err = os.Setenv("KEY_PATH", "fromenv")
+		require.NoError(t, err)
+
 		cfg.setEnvServerConfig()
 		require.Equal(
 			t,
@@ -235,6 +271,8 @@ func TestConfig(t *testing.T) {
 				HashKey:              &key,
 				CryptoPrivateKeyPath: "testfromflag",
 				CryptoPublicKeyPath:  "testfromflag",
+				CertPath:             "fromenv",
+				KeyPath:              "fromenv",
 				ConfigsFileName:      "config.json",
 			},
 			cfg.SConfig,
@@ -316,6 +354,8 @@ func Test_FileConfig(t *testing.T) {
 			HashKey:              &hashkey,
 			CryptoPrivateKeyPath: "fromjson",
 			CryptoPublicKeyPath:  "fromjson",
+			CertPath:             "fromjson",
+			KeyPath:              "fromjson",
 			ConfigsFileName:      "fromjson",
 		},
 		LConfig: LoggerConfig{
