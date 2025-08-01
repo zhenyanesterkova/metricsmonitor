@@ -36,7 +36,7 @@ func main() {
 		log.Fatalf("an error occurred while create the sender: %v", err)
 	}
 
-	sGRPC, err := grpcsender.New(cfg.Address, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit, cfg.CryptoKeyPath)
+	sGRPC, err := grpcsender.New(cfg.GRPCAddress, cfg.ReportInterval, metrics, cfg.HashKey, cfg.RateLimit, cfg.CertPath)
 	if err != nil {
 		log.Fatalf("an error occurred while create the grpc sender: %v", err)
 	}

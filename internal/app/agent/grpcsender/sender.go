@@ -1,30 +1,22 @@
 package grpcsender
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/hmac"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
 	"encoding/hex"
-	"encoding/json"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
 	pb "github.com/zhenyanesterkova/metricsmonitor/internal/app/proto/metric"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -37,7 +29,7 @@ type GRPCSender struct {
 	client                  pb.MonitorClient
 	conn                    *grpc.ClientConn
 	hashKey                 *string
-	publicKey               *rsa.PublicKey
+	cipher                  bool
 	endpoint                string
 	requestAttemptIntervals []string
 	reportInterval          time.Duration
@@ -56,27 +48,28 @@ func New(
 	rateLimit int,
 	pathToPublicKey string,
 ) (*GRPCSender, error) {
-	var publicKeyRsa *rsa.PublicKey
+	var isChipper bool
+	var creds credentials.TransportCredentials
 	if pathToPublicKey != "" {
-		publicKeyPEM, err := os.ReadFile(pathToPublicKey)
+		var err error
+		creds, err = credentials.NewClientTLSFromFile(pathToPublicKey, "localhost")
 		if err != nil {
-			return nil, fmt.Errorf("%s failed read public key from file: %w", op, err)
+			return nil, fmt.Errorf("%s failed to constructs TLS credentials from the provided root certificate: %w", op, err)
 		}
-
-		publicKeyBlock, _ := pem.Decode(publicKeyPEM)
-		publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
-		if err != nil {
-			return nil, fmt.Errorf("%s failed parses a public key in PKIX, ASN.1 DER form: %w", op, err)
-		}
-
-		var ok bool
-		publicKeyRsa, ok = publicKey.(*rsa.PublicKey)
-		if !ok {
-			return nil, fmt.Errorf("%s %w", op, errors.New("failed converting type to *rsa.PublicKey"))
-		}
+		isChipper = true
+	} else {
+		creds = insecure.NewCredentials()
 	}
 
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		addr,
+		grpc.WithTransportCredentials(
+			creds,
+		),
+		grpc.WithDefaultCallOptions(
+			grpc.UseCompressor(gzip.Name),
+		),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%s failed to connect to gRPC server: %w", op, err)
 	}
@@ -98,7 +91,7 @@ func New(
 		},
 		hashKey:   hashKey,
 		rateLimit: rateLimit,
-		publicKey: publicKeyRsa,
+		cipher:    isChipper,
 	}, nil
 }
 
@@ -124,77 +117,27 @@ func (s *GRPCSender) SendQueryUpdateMetrics() error {
 	}
 
 	ctx := context.Background()
-	if s.publicKey != nil || s.hashKey != nil {
-		jsonData, err := json.Marshal(pbMetrics)
+
+	md := metadata.New(map[string]string{
+		"content-encoding": "gzip",
+	})
+
+	if s.hashKey != nil {
+		data, err := proto.Marshal(req)
 		if err != nil {
-			return fmt.Errorf("%s failed to marshal metrics to JSON: %w", op, err)
+			return fmt.Errorf("%s failed to marshal metrics: %w", op, err)
 		}
-
-		var buff bytes.Buffer
-		gzWriter := gzip.NewWriter(&buff)
-		if _, err := gzWriter.Write(jsonData); err != nil {
-			return fmt.Errorf("%s failed to compress data: %w", op, err)
-		}
-		if err := gzWriter.Close(); err != nil {
-			return fmt.Errorf("%s failed to close gzip writer: %w", op, err)
-		}
-
-		compressedData := buff.Bytes()
-		finalData := compressedData
-
-		if s.publicKey != nil {
-			aesKey := make([]byte, aesKeySize)
-			if _, err := rand.Read(aesKey); err != nil {
-				return fmt.Errorf("%s failed to generate AES key: %w", op, err)
-			}
-
-			iv := make([]byte, aes.BlockSize)
-			if _, err := rand.Read(iv); err != nil {
-				return fmt.Errorf("%s failed to generate IV: %w", op, err)
-			}
-
-			block, _ := aes.NewCipher(aesKey)
-			stream := cipher.NewCTR(block, iv)
-
-			ciphertext := make([]byte, len(compressedData))
-			stream.XORKeyStream(ciphertext, compressedData)
-
-			var keyToEncrypt []byte
-			keyToEncrypt = append(keyToEncrypt, aesKey...)
-			keyToEncrypt = append(keyToEncrypt, iv...)
-
-			encryptedKey, err := rsa.EncryptOAEP(
-				sha256.New(),
-				rand.Reader,
-				s.publicKey,
-				keyToEncrypt,
-				nil,
-			)
-			if err != nil {
-				return fmt.Errorf("%s RSA encryption failed: %w", op, err)
-			}
-
-			finalData = append(finalData, encryptedKey...)
-			finalData = append(finalData, ciphertext...)
-		}
-
-		md := metadata.New(map[string]string{
-			"content-encoding": "gzip",
-		})
-
-		if s.hashKey != nil {
-			h := hmac.New(sha256.New, []byte(*s.hashKey))
-			h.Write(finalData)
-			sum := hex.EncodeToString(h.Sum(nil))
-			md.Set("hash-sha256", sum)
-		}
-
-		if s.publicKey != nil {
-			md.Set("encrypted", "true")
-		}
-
-		ctx = metadata.NewOutgoingContext(ctx, md)
+		h := hmac.New(sha256.New, []byte(*s.hashKey))
+		h.Write(data)
+		sum := hex.EncodeToString(h.Sum(nil))
+		md.Set("hashsha256", sum)
 	}
+
+	if s.cipher {
+		md.Set("encrypted", "true")
+	}
+
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	log.Printf("%s new gRPC request to %s", op, s.endpoint)
 	for _, m := range pbMetrics {
@@ -202,7 +145,10 @@ func (s *GRPCSender) SendQueryUpdateMetrics() error {
 	}
 
 	log.Printf("%s send gRPC request ...\n", op)
-	_, err := s.client.AddMetrics(ctx, req)
+	_, err := s.client.AddMetrics(
+		ctx,
+		req,
+	)
 
 	if err != nil {
 		reqSuccess := false
