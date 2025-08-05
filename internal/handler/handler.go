@@ -78,7 +78,7 @@ func NewRepositorieHandler(
 
 // InitChiRouter initializes a new Chi router with predefined routes and middleware.
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) error {
-	mdlWare, err := middleware.NewMiddlewareStruct(rh.Logger, rh.hashKey, rh.pathToPrivateKey)
+	mdlWare, err := middleware.NewMiddlewareStruct(rh.Logger, rh.hashKey, rh.pathToPrivateKey, rh.trustIPNet)
 	if err != nil {
 		return fmt.Errorf("failed create struct for middleware: %w", err)
 	}
@@ -96,6 +96,7 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) error {
 	router.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
 
 	router.Group(func(r chi.Router) {
+		r.Use(mdlWare.CheckTrustIP)
 		r.Use(mdlWare.ResetRespDataStruct)
 		r.Use(mdlWare.RequestLogger)
 		if rh.hashKey != nil {
