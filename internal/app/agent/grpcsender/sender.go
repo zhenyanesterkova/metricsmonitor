@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/retry"
 	pb "github.com/zhenyanesterkova/metricsmonitor/internal/app/proto/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -132,42 +133,12 @@ func (s *GRPCSender) SendQueryUpdateMetrics() error {
 	}
 
 	log.Printf("%s send gRPC request ...\n", op)
-	_, err := s.client.AddMetrics(
-		ctx,
-		req,
-	)
+	err := retry.RetryRequest(func() error {
+		_, err := s.client.AddMetrics(ctx, req)
+		return err
+	}, s.requestAttemptIntervals)
 
-	if err != nil {
-		reqSuccess := false
-		for i, interval := range s.requestAttemptIntervals {
-			dur, errParse := time.ParseDuration(interval)
-			if errParse != nil {
-				return fmt.Errorf(`%s failed send statistic to server: %w;
-				the attempt to re-send № %d failed: 
-				the interval could not be parsed: %w`,
-					op,
-					err,
-					i+1,
-					errParse,
-				)
-			}
-			time.Sleep(dur)
-			_, err = s.client.AddMetrics(ctx, req)
-			if err == nil {
-				reqSuccess = true
-				break
-			}
-		}
-		if !reqSuccess {
-			return fmt.Errorf(`%s failed send statistic to server: %w,
-			all attempts to re-send failed`,
-				op,
-				err,
-			)
-		}
-	}
-
-	return nil
+	return err
 }
 
 func (s *GRPCSender) SendReport(ctx context.Context) {
