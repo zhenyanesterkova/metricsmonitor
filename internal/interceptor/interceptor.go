@@ -70,17 +70,10 @@ func (is InterceptorStruct) CheckSignDataUnary() grpc.UnaryServerInterceptor {
 			return handler(ctx, req)
 		}
 
-		md, ok := metadata.FromIncomingContext(ctx)
+		signRequestData, ok := getMetadataValue(ctx, "hashsha256")
 		if !ok {
 			return handler(ctx, req)
 		}
-
-		hashValues := md.Get("hashsha256")
-		if len(hashValues) == 0 {
-			return handler(ctx, req)
-		}
-
-		signRequestData := hashValues[0]
 
 		data, err := serializeRequest(req)
 		if err != nil {
@@ -113,13 +106,8 @@ func (is InterceptorStruct) GzipUnary() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (any, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
+		hashValues, ok := getMetadataValues(ctx, "content-encoding")
 		if !ok {
-			return handler(ctx, req)
-		}
-
-		hashValues := md.Get("content-encoding")
-		if len(hashValues) == 0 {
 			return handler(ctx, req)
 		}
 
@@ -153,4 +141,32 @@ func serializeRequest(template any) ([]byte, error) {
 	}
 
 	return newMsg, nil
+}
+
+func getMetadataValue(ctx context.Context, key string) (string, bool) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return "", false
+	}
+
+	values := md.Get(key)
+	if len(values) == 0 {
+		return "", false
+	}
+
+	return values[0], true
+}
+
+func getMetadataValues(ctx context.Context, key string) ([]string, bool) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return []string{}, false
+	}
+
+	values := md.Get(key)
+	if len(values) == 0 {
+		return []string{}, false
+	}
+
+	return values, true
 }
