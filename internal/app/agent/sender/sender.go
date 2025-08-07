@@ -178,7 +178,10 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 		return nil
 	}, s.requestAttemptIntervals)
 
-	return fmt.Errorf("failed retry add metrics to server: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed retry add metrics to server: %w", err)
+	}
+	return nil
 }
 
 func (s *Sender) SendReport(ctx context.Context) {

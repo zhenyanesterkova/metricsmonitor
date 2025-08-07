@@ -138,7 +138,10 @@ func (s *GRPCSender) SendQueryUpdateMetrics() error {
 		return fmt.Errorf("failed add metrics to server: %w", err)
 	}, s.requestAttemptIntervals)
 
-	return fmt.Errorf("failed retry add metrics to server: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed retry add metrics to server: %w", err)
+	}
+	return nil
 }
 
 func (s *GRPCSender) SendReport(ctx context.Context) {
