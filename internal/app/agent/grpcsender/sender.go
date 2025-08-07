@@ -135,10 +135,10 @@ func (s *GRPCSender) SendQueryUpdateMetrics() error {
 	log.Printf("%s send gRPC request ...\n", op)
 	err := retry.RetryRequest(func() error {
 		_, err := s.client.AddMetrics(ctx, req)
-		return err
+		return fmt.Errorf("failed add metrics to server: %w", err)
 	}, s.requestAttemptIntervals)
 
-	return err
+	return fmt.Errorf("failed retry add metrics to server: %w", err)
 }
 
 func (s *GRPCSender) SendReport(ctx context.Context) {

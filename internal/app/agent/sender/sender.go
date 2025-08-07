@@ -167,13 +167,18 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 	err = retry.RetryRequest(func() error {
 		resp, err := s.client.Do(req)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed add metrics to server: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			err := resp.Body.Close()
+			if err != nil {
+				log.Fatalf("failed close request body: %v", err)
+			}
+		}()
 		return nil
 	}, s.requestAttemptIntervals)
 
-	return err
+	return fmt.Errorf("failed retry add metrics to server: %w", err)
 }
 
 func (s *Sender) SendReport(ctx context.Context) {
