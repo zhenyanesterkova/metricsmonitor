@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/metric"
+	"github.com/zhenyanesterkova/metricsmonitor/internal/app/agent/retry"
 )
 
 const (
@@ -163,41 +164,22 @@ func (s *Sender) SendQueryUpdateMetrics() error {
 	}
 
 	log.Println("send request ...")
-	resp, err := s.client.Do(req)
-	defer func(err error) {
-		if err == nil {
-			errBodyClose := resp.Body.Close()
-			if errBodyClose != nil {
-				log.Fatalf("sender.go func SendQueryUpdateMetrics(): error close body - %v", errBodyClose)
-			}
+	err = retry.RetryRequest(func() error {
+		resp, err := s.client.Do(req)
+		if err != nil {
+			return fmt.Errorf("failed add metrics to server: %w", err)
 		}
-	}(err)
+		defer func() {
+			err := resp.Body.Close()
+			if err != nil {
+				log.Fatalf("failed close request body: %v", err)
+			}
+		}()
+		return nil
+	}, s.requestAttemptIntervals)
+
 	if err != nil {
-		reqSuccess := false
-		for i, interval := range s.requestAttemptIntervals {
-			dur, errParse := time.ParseDuration(interval)
-			if errParse != nil {
-				return fmt.Errorf(`failed send statistic to server: %w;
-				the attempt to re-send № %d failed: 
-				the interval could not be parsed: %w`,
-					err,
-					i+1,
-					errParse,
-				)
-			}
-			time.Sleep(dur)
-			resp, err = s.client.Do(req)
-			if err == nil {
-				reqSuccess = true
-				break
-			}
-		}
-		if !reqSuccess {
-			return fmt.Errorf(`failed send statistic to server: %w,
-			all attempts to re-send failed`,
-				err,
-			)
-		}
+		return fmt.Errorf("failed retry add metrics to server: %w", err)
 	}
 	return nil
 }

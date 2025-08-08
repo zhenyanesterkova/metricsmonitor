@@ -14,9 +14,12 @@ type flags struct {
 	logLevel        string
 	cryptoKey       string
 	cryptoPublicKey string
+	certPath        string
+	keyPath         string
 	hashKey         *string
 	fileStoragePath string
 	dsn             string
+	strCIDR         string
 	tempDur         int
 	restore         bool
 }
@@ -44,6 +47,14 @@ func (c *Config) parseFlagsVariables() *flags {
 		"l",
 		logLevel,
 		"log level",
+	)
+
+	CIDRflag := ""
+	flag.StringVar(
+		&CIDRflag,
+		"t",
+		CIDRflag,
+		"trusted subnet",
 	)
 
 	var tempDur int
@@ -102,6 +113,22 @@ func (c *Config) parseFlagsVariables() *flags {
 		"path to the file with the public key",
 	)
 
+	certPath := ""
+	flag.StringVar(
+		&certPath,
+		"cert-path",
+		certPath,
+		"path to the file with the certificate",
+	)
+
+	keyPath := ""
+	flag.StringVar(
+		&keyPath,
+		"key-path",
+		keyPath,
+		"path to the file with the private key",
+	)
+
 	flag.Parse()
 
 	res := &flags{
@@ -110,11 +137,14 @@ func (c *Config) parseFlagsVariables() *flags {
 		logLevel:        logLevel,
 		cryptoKey:       cryptoKey,
 		cryptoPublicKey: cryptoPublicKey,
+		certPath:        certPath,
+		keyPath:         keyPath,
 		fileStoragePath: fileStoragePath,
 		tempDur:         tempDur,
 		restore:         restore,
 		dsn:             dsn,
 		hashKey:         &hashKey,
+		strCIDR:         CIDRflag,
 	}
 	return res
 }
@@ -129,11 +159,22 @@ func (c *Config) setFlagsVariables(f *flags) error {
 	if isFlagPassed("l") {
 		c.LConfig.Level = f.logLevel
 	}
+
+	if isFlagPassed("t") {
+		c.SConfig.StringCIDR = f.strCIDR
+	}
+
 	if isFlagPassed("crypto-key") {
 		c.SConfig.CryptoPrivateKeyPath = f.cryptoKey
 	}
 	if isFlagPassed("crypto-pub-key") {
 		c.SConfig.CryptoPublicKeyPath = f.cryptoPublicKey
+	}
+	if isFlagPassed("cert-path") {
+		c.SConfig.CertPath = f.certPath
+	}
+	if isFlagPassed("key-path") {
+		c.SConfig.KeyPath = f.keyPath
 	}
 	if isFlagPassed("f") {
 		c.DBConfig.FileStorageConfig.FileStoragePath = f.fileStoragePath

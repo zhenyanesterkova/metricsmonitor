@@ -1,4 +1,3 @@
-// A server for collecting runtime metrics that collects reports from agents over the HTTP protocol.
 package main
 
 import (
@@ -6,6 +5,7 @@ import (
 	"log"
 
 	"github.com/zhenyanesterkova/metricsmonitor/internal/app/server/server"
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 var buildVersion = "N/A"
@@ -14,7 +14,7 @@ var buildCommit = "N/A"
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatalf("server error: %v", err)
+		log.Fatalf("grpc server error: %v", err)
 	}
 }
 
@@ -25,7 +25,7 @@ func run() error {
 		Commit:  buildCommit,
 	}
 
-	srv := server.New(server.HTTPServer, buildInfo)
+	srv := server.New(server.GRPCServer, buildInfo)
 
 	if err := srv.Initialize(); err != nil {
 		return fmt.Errorf("%w", err)

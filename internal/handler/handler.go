@@ -12,6 +12,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
@@ -51,7 +52,8 @@ type RepositorieHandler struct {
 	// Logger is a logging utility used to record events and errors.
 	Logger logger.LogrusLogger
 	// hashKey is a key for calculating the hash.
-	hashKey *string
+	hashKey    *string
+	trustIPNet *net.IPNet
 	// pathToPrivateKey used to store the path to a file containing an asymmetric encryption private key
 	pathToPrivateKey string
 }
@@ -62,18 +64,21 @@ func NewRepositorieHandler(
 	log logger.LogrusLogger,
 	key *string,
 	pathToPrivateKey string,
+	trustIPNet *net.IPNet,
+
 ) *RepositorieHandler {
 	return &RepositorieHandler{
 		Repo:             rep,
 		Logger:           log,
 		hashKey:          key,
 		pathToPrivateKey: pathToPrivateKey,
+		trustIPNet:       trustIPNet,
 	}
 }
 
 // InitChiRouter initializes a new Chi router with predefined routes and middleware.
 func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) error {
-	mdlWare, err := middleware.NewMiddlewareStruct(rh.Logger, rh.hashKey, rh.pathToPrivateKey)
+	mdlWare, err := middleware.NewMiddlewareStruct(rh.Logger, rh.hashKey, rh.pathToPrivateKey, rh.trustIPNet)
 	if err != nil {
 		return fmt.Errorf("failed create struct for middleware: %w", err)
 	}
@@ -91,6 +96,7 @@ func (rh *RepositorieHandler) InitChiRouter(router *chi.Mux) error {
 	router.Handle("/debug/pprof/allocs", pprof.Handler("allocs"))
 
 	router.Group(func(r chi.Router) {
+		r.Use(mdlWare.CheckTrustIP)
 		r.Use(mdlWare.ResetRespDataStruct)
 		r.Use(mdlWare.RequestLogger)
 		if rh.hashKey != nil {

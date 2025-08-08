@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -17,12 +18,14 @@ type MiddlewareStruct struct {
 	hashKey    *string
 	respData   *responseDataWriter
 	privateKey *rsa.PrivateKey
+	trustIPNet *net.IPNet
 }
 
 func NewMiddlewareStruct(
 	log logger.LogrusLogger,
 	key *string,
 	pathToPrivateKey string,
+	trustIPNet *net.IPNet,
 ) (MiddlewareStruct, error) {
 	responseData := &responseData{
 		status:  0,
@@ -50,6 +53,7 @@ func NewMiddlewareStruct(
 		hashKey:    key,
 		respData:   &lw,
 		privateKey: privateKey,
+		trustIPNet: trustIPNet,
 	}, nil
 }
 
