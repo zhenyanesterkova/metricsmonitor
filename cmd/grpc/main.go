@@ -90,11 +90,26 @@ func run() error {
 		return fmt.Errorf("failed listen announces on the local network address: %w", err)
 	}
 
-	interceptors, err := interceptor.NewInterceptorStruct(loggerInst, cfg.SConfig.HashKey)
-	if err != nil {
-		loggerInst.LogrusLog.Errorf("failed create interceptor: %v", err)
-		return fmt.Errorf("failed create interceptor: %w", err)
+	loggerAdapter := interceptor.NewLogrusAdapter(loggerInst)
+	loggingInterceptor := interceptor.NewInterceptorLogger(loggerAdapter)
+
+	var signatureInterceptor *interceptor.SignatureInterceptor
+	if cfg.SConfig.HashKey != nil {
+		validator := interceptor.NewHMACSignatureValidator(cfg.SConfig.HashKey, loggerAdapter)
+		signatureInterceptor = interceptor.NewSignatureInterceptor(validator)
 	}
+
+	compressionHandler := interceptor.NewGzipCompressionHandler(loggerAdapter)
+	compressionInterceptor := interceptor.NewCompressionInterceptor(compressionHandler)
+
+	chain := interceptor.NewInterceptorChain().
+		Add(loggingInterceptor)
+
+	if signatureInterceptor != nil {
+		chain.Add(signatureInterceptor)
+	}
+
+	chain.Add(compressionInterceptor)
 
 	creds, err := credentials.NewServerTLSFromFile(cfg.SConfig.CertPath, cfg.SConfig.KeyPath)
 	if err != nil {
@@ -110,11 +125,7 @@ func run() error {
 
 	s := grpc.NewServer(
 		grpc.Creds(creds),
-		grpc.ChainUnaryInterceptor(
-			interceptors.RequestLoggerUnary(),
-			interceptors.CheckSignDataUnary(),
-			interceptors.GzipUnary(),
-		),
+		grpc.ChainUnaryInterceptor(chain.Build()...),
 	)
 
 	grpcHandler := grpchandler.New(
